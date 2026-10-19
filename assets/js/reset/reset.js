@@ -33,13 +33,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (typeof updateData === "function") {
         updateData({
-          fps: 0,
+          fps: null,
           latency: null,
-          faces: 0,
+          faces: null,
           ear: null,
           mar: null,
-          blink_times: 0,
-          yawn_times: 0,
+          blink_times: null,
+          yawn_times: null,
           eye_closure_dur: null,
           yawn_dur: null,
           perclos: null,
