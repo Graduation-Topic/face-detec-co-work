@@ -12,7 +12,6 @@ class State:
         self.reset()
 
     def reset(self):
-
         # Detection
         self.started = False
         self.session_id = None
@@ -92,9 +91,8 @@ class State:
         self.nod_threshold = Config.NOD_RATIO_THRESHOLD
 
         self.start_record_time = time.time()
-
+    
     def reset_metrics(self):
-
         self.latency = 0
         self.face_count = 0
         self.camera_fps = 0

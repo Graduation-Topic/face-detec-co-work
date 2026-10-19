@@ -1586,10 +1586,6 @@ body {
     overflow-x: auto;
   }
 
-  .stat-label {
-    font-size: 10px;
-  }
-
   .stat-value {
     font-size: 14px;
   }
