@@ -1,19 +1,16 @@
 @font-face {
   font-family: "Inter_Medium";
   src: url("/assets/font/Inter_Medium.woff2") format("woff2");
-  flex-wrap: wrap;
 }
 
 @font-face {
   font-family: "Inter_Regular";
   src: url("/assets/font/Inter_Regular.woff2") format("woff2");
-  flex-wrap: wrap;
 }
 
 @font-face {
   font-family: "Consolas";
   src: url("/assets/font/Consolas.woff2") format("woff2");
-  flex-wrap: wrap;
 }
 
 * {
@@ -25,37 +22,40 @@
 :root {
   --nav-height: 44px;
 
+  /* Fonts */
   --font-regular: "Inter_Regular";
   --font-medium: "Inter_Medium";
   --font-mono: "Consolas";
 
+  /* Surfaces */
   --color-bg: #000000;
   --color-surface: #202020;
   --color-surface-raised: #242424;
   --color-surface-hover: #2a2a2a;
 
+  /* Borders */
   --color-border: rgba(255, 255, 255, 0.16);
   --color-border-strong: #454545;
   --color-border-focus: #606060;
 
+  /* Text */
   --color-text-primary: #f5f5f5;
   --color-text-secondary: #a1a1a1;
   --color-text-muted: #707070;
 
+  /* Buttons */
   --color-button-bg: #303030;
-  --color-button-bg-hover-2: rgba(255, 255, 255, 0.2);
   --color-button-bg-hover: #383838;
+  --color-button-bg-hover-2: rgba(255, 255, 255, 0.2);
   --color-button-bg-active: #282828;
-
   --color-button-border: #3a3a3a;
   --color-button-border-hover: #505050;
   --color-button-border-active: #606060;
-
   --color-button-text: #f5f5f5;
 
+  /* Status */
   --color-accent: #007aff;
   --color-accent-hover: #1685ff;
-
   --color-danger: #ff4d4d;
   --color-warning: #ffb84d;
   --color-success: #4cd964;
@@ -64,6 +64,10 @@
 
   --button-border-radius-6px: 6px;
 }
+
+/* =========================================
+   Utilities
+   ========================================= */
 
 .hidden {
   display: none !important;
@@ -75,6 +79,10 @@
 
 .hover-off {
   background-color: transparent;
+}
+
+.hover-accent {
+  background-color: var(--color-accent);
 }
 
 .cursor-pointer {
@@ -89,6 +97,10 @@
   opacity: 0.9;
 }
 
+/* =========================================
+   App
+   ========================================= */
+
 body {
   display: flex;
   width: 100%;
@@ -100,24 +112,6 @@ body {
   gap: 12px;
 }
 
-.app-nav {
-  display: flex;
-  width: 100%;
-  max-width: 1316px;
-  height: var(--nav-height);
-  flex-shrink: 0;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 999;
-  margin: 0 auto;
-  background-color: #000;
-  backdrop-filter: blur(24px);
-  border-bottom: 1px solid var(--color-border);
-  gap: 24px;
-}
-
 .app {
   display: flex;
   width: 100%;
@@ -126,6 +120,38 @@ body {
   align-items: center;
   padding: 0 16px 32px;
   gap: 12px;
+}
+
+.app-content {
+  display: flex;
+  width: 100%;
+  max-width: 1316px;
+  height: auto;
+  justify-content: center;
+  margin: 0 auto;
+  gap: 16px;
+}
+
+/* =========================================
+   Navigation
+   ========================================= */
+
+.app-nav {
+  display: flex;
+  width: 100%;
+  height: var(--nav-height);
+  flex-shrink: 0;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  padding: 0 16px;
+  background-color: #000;
+  white-space: nowrap;
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--color-border);
+  gap: 24px;
 }
 
 .nav-lft {
@@ -160,15 +186,9 @@ body {
   color: #fff;
 }
 
-.app-content {
-  display: flex;
-  width: 100%;
-  max-width: 1316px;
-  height: auto;
-  justify-content: center;
-  margin: 0 auto;
-  gap: 16px;
-}
+/* =========================================
+   Footer
+   ========================================= */
 
 .app-footer {
   display: flex;
@@ -177,7 +197,6 @@ body {
   height: auto;
   flex-direction: column;
   justify-content: center;
-  padding: 120px auto 0;
   margin: 120px auto 0;
   gap: 12px;
 }
@@ -321,6 +340,10 @@ body {
   color: #fff;
 }
 
+/* =========================================
+   Layout Title
+   ========================================= */
+
 .layout-title {
   display: flex;
   flex-direction: column;
@@ -334,6 +357,10 @@ body {
   color: #fff;
   font-family: var(--font-medium);
 }
+
+/* =========================================
+   Display: Video / Camera
+   ========================================= */
 
 .fd-display {
   display: flex;
@@ -384,10 +411,15 @@ body {
   border-radius: var(--button-border-radius-6px);
 }
 
+/* 鏡像翻轉 */
 .fd-video video,
 .fd-video #landmark-overlay {
   transform: scaleX(-1);
 }
+
+/* =========================================
+   Display: Alert Overlay
+   ========================================= */
 
 .fd-alert-overlay {
   position: absolute;
@@ -427,6 +459,10 @@ body {
   transform: translateY(0);
 }
 
+/* =========================================
+   Display: Control Overlay
+   ========================================= */
+
 .fd-overlay {
   display: flex;
   position: absolute;
@@ -445,6 +481,11 @@ body {
   transition: opacity 0.25s ease;
 }
 
+.fd-display .fd-overlay:hover,
+.fd-display .fd-overlay.is-active {
+  opacity: 1;
+}
+
 .fd-pill {
   display: flex;
   width: 100%;
@@ -457,17 +498,17 @@ body {
   padding: 0;
 }
 
+.fd-overlay-btm {
+  justify-content: space-between;
+  padding-bottom: 8px;
+}
+
 .overlay-status-panel {
   display: flex;
   width: 250px;
   height: auto;
   max-height: 100px;
   overflow-y: auto;
-}
-
-.fd-overlay-btm {
-  justify-content: space-between;
-  padding-bottom: 8px;
 }
 
 .fd-pill .overlay-left-control {
@@ -492,7 +533,7 @@ body {
   align-items: center;
   background-color: transparent;
   height: 28px;
-  aspect-ratio: 1/1;
+  aspect-ratio: 1 / 1;
   border: none;
   outline: none;
   padding: 6px;
@@ -513,6 +554,10 @@ body {
   display: none;
 }
 
+/* =========================================
+   Setting Overlay Modal
+   ========================================= */
+
 .setting-overlay-modal {
   display: none;
   position: absolute;
@@ -531,6 +576,10 @@ body {
   z-index: 998;
 }
 
+.setting-overlay-modal.active {
+  display: flex;
+}
+
 .setting-overlay-modal .menu-view {
   display: flex;
   flex-direction: column;
@@ -542,13 +591,20 @@ body {
   display: none;
 }
 
-.setting-option .tick-icon {
-  display: none;
+.setting-overlay-modal .menu-divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 2px 0;
 }
 
-.setting-option .tick-icon.active {
-  display: flex;
+.setting-overlay-modal .close-btn,
+.setting-overlay-modal .back-btn {
+  justify-content: start !important;
+  gap: 6px;
+  padding: 4px 3px;
 }
+
+/* ----- Setting option ----- */
 
 .setting-option {
   display: flex;
@@ -573,6 +629,12 @@ body {
   cursor: default;
 }
 
+.setting-option[data-disabled] {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
 .setting-option span {
   color: #fff;
   font-family: var(--font-regular);
@@ -585,7 +647,16 @@ body {
   height: 16px;
 }
 
-/* setting-overlay-modal toggle-switch */
+.setting-option .tick-icon {
+  display: none;
+}
+
+.setting-option .tick-icon.active {
+  display: flex;
+}
+
+/* ----- Toggle switch ----- */
+
 .setting-option .t-switch {
   position: relative;
   display: inline-block;
@@ -641,42 +712,9 @@ body {
   transform: translate(13px, -50%);
 }
 
-.setting-option[data-disabled] {
-  opacity: 0.4;
-  cursor: not-allowed !important;
-  pointer-events: none;
-}
-
-.hover-accent {
-  background-color: var(--color-accent);
-}
-
-.setting-overlay-modal .close-btn {
-  justify-content: start !important;
-  gap: 6px;
-  padding: 4px 3px 4px 3px;
-}
-
-.setting-overlay-modal .back-btn {
-  justify-content: start !important;
-  gap: 6px;
-  padding: 4px 3px 4px 3px;
-}
-
-.setting-overlay-modal .menu-divider {
-  height: 1px;
-  background-color: var(--color-border);
-  margin: 2px 0;
-}
-
-.setting-overlay-modal.active {
-  display: flex;
-}
-
-.fd-display .fd-overlay:hover,
-.fd-display .fd-overlay.is-active {
-  opacity: 1;
-}
+/* =========================================
+   Camera Stats
+   ========================================= */
 
 .fd-state {
   display: flex;
@@ -713,6 +751,10 @@ body {
   text-overflow: ellipsis;
 }
 
+/* =========================================
+   Control Panel
+   ========================================= */
+
 .fd-control {
   display: flex;
   flex: 0 0 330px;
@@ -729,6 +771,8 @@ body {
   gap: 24px;
 }
 
+/* ----- Fatigue summary ----- */
+
 #fatigue-sum {
   display: flex;
   width: 100%;
@@ -738,6 +782,26 @@ body {
   overflow-x: auto;
   white-space: nowrap;
 }
+
+#fatigue-score {
+  color: #fff;
+  font-family: var(--font-medium);
+  font-size: 16px;
+}
+
+.fatigue-status-danger {
+  color: var(--color-danger);
+}
+
+.fatigue-status-warning {
+  color: var(--color-warning);
+}
+
+.fatigue-status-safe {
+  color: #fff;
+}
+
+/* ----- Info card ----- */
 
 .info-card {
   display: flex;
@@ -782,200 +846,7 @@ body {
   transition: color 0.3s ease;
 }
 
-#fatigue-score {
-  color: #fff;
-  font-family: var(--font-medium);
-  font-size: 16px;
-}
-
-.fatigue-status-danger {
-  color: var(--color-danger);
-}
-
-.fatigue-status-warning {
-  color: var(--color-warning);
-}
-
-.fatigue-status-safe {
-  color: #fff;
-}
-
-.info-card--calibration {
-  display: flex;
-  width: 100%;
-  gap: 8px;
-  padding: 0;
-  overflow-x: auto;
-  white-space: nowrap;
-  background-color: transparent;
-  border: none;
-}
-
-.cali-baseline-option {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-width: 220px;
-  min-height: 60px;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-bg);
-  border-radius: var(--button-border-radius-6px);
-  gap: 0;
-  overflow: hidden;
-}
-
-.cali-option-top {
-  display: flex;
-  width: 100%;
-  height: 60px;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0 8px 16px;
-  gap: 16px;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.25s ease;
-}
-
-.cali-baseline-option:has(input[type="radio"]:checked) .cali-option-top {
-  border-bottom: 1px solid var(--color-border);
-}
-
-.cali-option-left {
-  display: flex;
-  width: 50%;
-  height: 100%;
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
-}
-
-.cali-option-left input[type="radio"] {
-  appearance: none;
-  display: none;
-  -webkit-appearance: none;
-}
-
-.cali-option-left input[type="radio"]:checked {
-  background-color: #007aff;
-}
-
-.cali-baseline-option:has(input[type="radio"]:checked) {
-  border-color: #007aff;
-}
-
-.cali-baseline-option-content {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.cali-baseline-option-content > span {
-  color: #fff;
-  font-family: var(--font-regular);
-  font-size: 14px;
-  line-height: 1;
-}
-
-.cali-baseline-option-content > span:nth-child(2) {
-  color: var(--color-text-secondary);
-  font-family: var(--font-regular);
-  font-size: 12px;
-  line-height: 1;
-}
-
-.cali-option-right {
-  display: flex;
-  width: 50%;
-  height: 100%;
-  justify-content: end;
-  align-items: center;
-  padding-right: 16px;
-}
-
-.cali-chevron {
-  width: 16px;
-  height: 16px;
-  aspect-ratio: 1 / 1;
-  flex-shrink: 0;
-  transform-origin: center;
-  transition: transform 0.2s ease;
-  display: block;
-}
-
-.cali-baseline-option:has(input[type="radio"]:checked) .cali-chevron {
-  transform: rotate(180deg);
-}
-
-.cali-option-expand {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.25s ease;
-}
-
-.cali-baseline-option:has(input[type="radio"]:checked) .cali-option-expand {
-  max-height: 200px;
-}
-
-.cali-expand-inner {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  padding: 12px;
-  border-radius: 0 0 18px 18px;
-}
-
-.cali-value-row {
-  display: flex;
-  width: 100%;
-  min-width: 0;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 6px;
-  gap: 8px;
-}
-
-.cali-value-label {
-  color: var(--color-text-secondary);
-  font-family: var(--font-regular);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.cali-value-number {
-  color: var(--color-text-primary);
-  font-family: var(--font-regular);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.6;
-}
-
-.calibration-btn {
-  display: flex;
-  width: 100%;
-  height: auto;
-  min-height: 40px;
-  padding: 6px 12px;
-  justify-content: center;
-  align-items: center;
-  font-size: 12px;
-  font-family: var(--font-regular);
-  border-radius: var(--button-border-radius-6px);
-  background-color: transparent;
-  border: 1px solid var(--color-button-border);
-  margin-top: 10px;
-  line-height: 1;
-  color: var(--color-text-secondary);
-}
-
-.calibration-btn:hover {
-  color: #fff;
-  border-color: var(--color-button-border-hover);
-}
-
-.calibration-btn:active {
-  scale: 0.99;
-}
+/* ----- Info card: collapsible ----- */
 
 .info-card--collapse {
   padding: 0;
@@ -1088,6 +959,191 @@ body {
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
+
+/* =========================================
+   Calibration
+   ========================================= */
+
+.info-card--calibration {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  padding: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  background-color: transparent;
+  border: none;
+}
+
+.cali-baseline-option {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 220px;
+  min-height: 60px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+  border-radius: var(--button-border-radius-6px);
+  gap: 0;
+  overflow: hidden;
+}
+
+.cali-baseline-option:has(input[type="radio"]:checked) {
+  border-color: #007aff;
+}
+
+.cali-option-top {
+  display: flex;
+  width: 100%;
+  height: 60px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 8px 16px;
+  gap: 16px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.25s ease;
+}
+
+.cali-baseline-option:has(input[type="radio"]:checked) .cali-option-top {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cali-option-left {
+  display: flex;
+  width: 50%;
+  height: 100%;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.cali-option-left input[type="radio"] {
+  appearance: none;
+  display: none;
+  -webkit-appearance: none;
+}
+
+.cali-option-left input[type="radio"]:checked {
+  background-color: #007aff;
+}
+
+.cali-baseline-option-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cali-baseline-option-content > span {
+  color: #fff;
+  font-family: var(--font-regular);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.cali-baseline-option-content > span:nth-child(2) {
+  color: var(--color-text-secondary);
+  font-family: var(--font-regular);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.cali-option-right {
+  display: flex;
+  width: 50%;
+  height: 100%;
+  justify-content: end;
+  align-items: center;
+  padding-right: 16px;
+}
+
+.cali-chevron {
+  display: block;
+  width: 16px;
+  height: 16px;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
+  transform-origin: center;
+  transition: transform 0.2s ease;
+}
+
+.cali-baseline-option:has(input[type="radio"]:checked) .cali-chevron {
+  transform: rotate(180deg);
+}
+
+.cali-option-expand {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.cali-baseline-option:has(input[type="radio"]:checked) .cali-option-expand {
+  max-height: 200px;
+}
+
+.cali-expand-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 0 0 18px 18px;
+}
+
+.cali-value-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 6px;
+  gap: 8px;
+}
+
+.cali-value-label {
+  color: var(--color-text-secondary);
+  font-family: var(--font-regular);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.cali-value-number {
+  color: var(--color-text-primary);
+  font-family: var(--font-regular);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.calibration-btn {
+  display: flex;
+  width: 100%;
+  height: auto;
+  min-height: 40px;
+  padding: 6px 12px;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  font-family: var(--font-regular);
+  border-radius: var(--button-border-radius-6px);
+  background-color: transparent;
+  border: 1px solid var(--color-button-border);
+  margin-top: 10px;
+  line-height: 1;
+  color: var(--color-text-secondary);
+}
+
+.calibration-btn:hover {
+  color: #fff;
+  border-color: var(--color-button-border-hover);
+}
+
+.calibration-btn:active {
+  scale: 0.99;
+}
+
+/* =========================================
+   Function Buttons
+   ========================================= */
 
 .fd-funcButton {
   display: flex;
@@ -1218,6 +1274,8 @@ body {
   gap: 12px;
 }
 
+/* ----- Realtime charts ----- */
+
 .rt-chart-layout {
   display: grid;
   width: 100%;
@@ -1265,6 +1323,8 @@ body {
 .rt-chart-canvas canvas {
   display: block;
 }
+
+/* ----- Logs ----- */
 
 .log-scroll {
   display: flex;
@@ -1335,6 +1395,8 @@ body {
   word-break: break-word;
 }
 
+/* ----- Export button ----- */
+
 .log-export-btn {
   display: inline-flex;
   align-items: center;
@@ -1358,14 +1420,14 @@ body {
   border-color: var(--color-button-border-hover);
 }
 
-.log-export-btn svg {
-  width: 14px;
-  height: 14px;
-}
-
 .log-export-btn:active {
   background-color: var(--color-button-bg-active);
   border-color: var(--color-button-border-active);
+}
+
+.log-export-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 .log-export-btn:disabled {
@@ -1387,7 +1449,7 @@ body {
 }
 
 /* =========================================
-   Responsive Layout
+   Responsive: Tablet (<= 1200px)
    ========================================= */
 
 @media (max-width: 1200px) {
@@ -1401,6 +1463,10 @@ body {
     gap: 0;
   }
 
+  .app-nav {
+    padding: 0 16px;
+  }
+
   .app-nav a {
     font-size: 14px;
   }
@@ -1411,6 +1477,7 @@ body {
     display: contents;
   }
 
+  /* 以 order 重新排列各區塊 */
   .fd-video {
     order: 1;
     width: 100%;
@@ -1436,12 +1503,12 @@ body {
 
   .control-panel > .info-card {
     order: 6;
-    margin-bottom: 24px;
+    margin: 24px 0;
   }
 }
 
 /* =========================================
-   Mobile
+   Responsive: Mobile (<= 700px)
    ========================================= */
 
 @media (max-width: 700px) {
@@ -1464,9 +1531,7 @@ body {
     flex-direction: column;
   }
 
-  /* =========================
-     Camera
-     ========================= */
+  /* ----- Camera ----- */
 
   .fd-display {
     width: 100%;
@@ -1511,9 +1576,7 @@ body {
     display: none;
   }
 
-  /* =========================
-     Camera state
-     ========================= */
+  /* ----- Camera state ----- */
 
   .fd-state {
     width: 100%;
@@ -1521,11 +1584,6 @@ body {
     gap: 6px;
     padding: 12px 0;
     overflow-x: auto;
-  }
-
-  .stat-item {
-    min-width: 100px;
-    padding: 8px;
   }
 
   .stat-label {
@@ -1536,9 +1594,7 @@ body {
     font-size: 14px;
   }
 
-  /* =========================
-     Control panel
-     ========================= */
+  /* ----- Control panel ----- */
 
   .fd-control {
     width: 100%;
@@ -1569,9 +1625,7 @@ body {
     min-width: 0;
   }
 
-  /* =========================
-     Tabs
-     ========================= */
+  /* ----- Tabs ----- */
 
   .fd-tablist {
     margin: 16px 0;
@@ -1581,9 +1635,7 @@ body {
     padding: 0 16px;
   }
 
-  /* =========================
-     Charts
-     ========================= */
+  /* ----- Charts ----- */
 
   .rt-chart-layout {
     width: 100%;
@@ -1600,9 +1652,7 @@ body {
     max-height: 160px;
   }
 
-  /* =========================
-     Logs
-     ========================= */
+  /* ----- Logs ----- */
 
   .log-scroll {
     width: 100%;
@@ -1610,9 +1660,7 @@ body {
     height: 120px;
   }
 
-  /* =========================
-     Export
-     ========================= */
+  /* ----- Export ----- */
 
   .fd-tablist .fd-export {
     flex-direction: column;

@@ -53,17 +53,17 @@
   </head>
 
   <body>
-    <main class="app">
-      <nav class="app-nav">
-        <div class="nav-lft">
-          <a class="user-select-none cursor-pointer" href="/index">Demo</a>
-          <a class="user-select-none cursor-pointer">文件</a>
-        </div>
-        <div class="nav-rgt">
-          <a class="user-select-none cursor-pointer">登入</a>
-        </div>
-      </nav>
+    <nav class="app-nav">
+      <div class="nav-lft">
+        <a class="user-select-none cursor-pointer" href="/index">Demo</a>
+        <a class="user-select-none cursor-pointer">文件</a>
+      </div>
+      <div class="nav-rgt">
+        <a class="user-select-none cursor-pointer">登入</a>
+      </div>
+    </nav>
 
+    <main class="app">
       <div class="app-content">
         <div class="fd-display">
           <div class="fd-video">
@@ -286,6 +286,11 @@
             <div class="stat-item">
               <span class="stat-label">Latency</span>
               <span class="stat-value" id="latency-info">--</span>
+            </div>
+
+            <div class="stat-item">
+              <span class="stat-label">Brightness</span>
+              <span class="stat-value" id="brightness-info">--</span>
             </div>
 
             <div class="stat-item">
@@ -702,7 +707,7 @@
                 aria-expanded="true"
                 aria-controls="head-body"
               >
-                <span class="info-title">Head & Env</span>
+                <span class="info-title">Head</span>
                 <span class="info-card-summary" aria-hidden="true">--</span>
                 <svg
                   class="info-card-chevron"
@@ -735,10 +740,6 @@
                   <div class="setting-option-state">
                     <strong>Yaw<small>左右轉頭比例</small></strong>
                     <span id="yaw-info">--</span>
-                  </div>
-                  <div class="setting-option-state">
-                    <strong>Brightness<small>環境亮度與夜間補償</small></strong>
-                    <span id="brightness-info">--</span>
                   </div>
                 </div>
               </div>

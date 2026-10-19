@@ -124,9 +124,9 @@ function updateData(data) {
     const bVal = data.brightness ?? window.edgeStats?.brightness;
     const isNight = data.is_night_mode ?? window.edgeStats?.isNightMode;
     brightEl.textContent =
-      bVal != null ? `${bVal} ${isNight ? "(🌙 夜間增強)" : ""}` : "--";
+      bVal != null ? `${bVal} ${isNight ? "(夜間增強)" : ""}` : "--";
   }
-  
+
   // =======================================================
   // Threshold
   // =======================================================
