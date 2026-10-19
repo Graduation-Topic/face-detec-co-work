@@ -2,7 +2,8 @@ const EDGE_VISION_URL =
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/vision_bundle.mjs";
 const EDGE_WASM_URL =
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm";
-const EDGE_MODEL_URL = "/model/face_landmarker.task";
+const EDGE_MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 const EDGE_DETECTOR_URL = "/assets/js/fatigue-detector.js";
 
 let edgePromise = null;

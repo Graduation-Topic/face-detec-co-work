@@ -69,22 +69,22 @@ function initializeAlert() {
 
     // 等級 1：致命危險攔截 (微睡眠 / 瞬間點頭下墜 / 持續低頭)
     if (eyeClosureDur >= microsleepDur) {
-      alertText = "🚨 致命危險：微睡眠發生 (Microsleep)！";
+      alertText = "致命危險：微睡眠發生 (Microsleep)！";
       isCritical = true;
     } else if (isSnapNodding || nodDur >= nodMinDur) {
-      alertText = "🚨 致命危險：打瞌睡點頭 (Head Snap)！";
+      alertText = "致命危險：打瞌睡點頭 (Head Snap)！";
       isCritical = true;
     }
     // 等級 2：中度疲勞與分心預警 (慢速眨眼 / 打哈欠 / 左右張望)
     else if (eyeClosureDur >= config.EYE_CLOSURE_MIN_DURATION) {
-      alertText = "⚠️ 警告：慢速眨眼 / 長時間閉眼";
+      alertText = "警告：慢速眨眼 / 長時間閉眼";
     } else if (yawnDur >= config.YAWN_MIN_DURATION) {
-      alertText = "⚠️ 警告：偵測到打哈欠";
+      alertText = "警告：偵測到打哈欠";
     } else if (isLookingAway) {
-      alertText = "⚠️ 注意：視線偏離前方 (分心)";
+      alertText = "注意：視線偏離前方 (分心)";
     }
 
-  if (alertText) {
+    if (alertText) {
       messageText.textContent = alertText;
       message.style.background = isCritical
         ? "rgba(180, 0, 0, 0.95)"

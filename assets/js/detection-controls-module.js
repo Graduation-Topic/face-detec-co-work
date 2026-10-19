@@ -291,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
           window.edgeDetector?.selectCalibration("default");
 
           if (typeof addSystemLog === "function") {
-            addSystemLog("[CALIBRATION] Default", "info");
+            addSystemLog("[CALIBRATION] 預設模式", "info");
           }
         } catch (error) {
           console.error("[CALIBRATION]", error);
@@ -309,7 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
           statusText.textContent = "尚未校準";
 
           if (typeof addSystemLog === "function") {
-            addSystemLog("[CALIBRATION] Baseline", "info");
+            addSystemLog("[CALIBRATION] 校準模式", "info");
           }
 
           return;
