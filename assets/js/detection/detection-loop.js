@@ -3,23 +3,6 @@ let lastVideoTime = -1;
 
 const frameStamps = [];
 
-// 新增：環境亮度檢測專用微型畫布
-const hiddenCanvas = document.createElement("canvas");
-const hiddenCtx = hiddenCanvas.getContext("2d", { willReadFrequently: true });
-hiddenCanvas.width = 64;
-hiddenCanvas.height = 64;
-
-function calculateBrightness(videoEl) {
-  if (!videoEl || !videoEl.videoWidth) return null;
-  hiddenCtx.drawImage(videoEl, 0, 0, 64, 64);
-  const data = hiddenCtx.getImageData(0, 0, 64, 64).data;
-  let sum = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
-  }
-  return Math.round((sum / (64 * 64)) * 10) / 10;
-}
-
 // =========================================================
 // Edge：逐幀偵測迴圈
 // =========================================================
@@ -50,16 +33,7 @@ function updateEdgeStats(frameStart, elapsedMs) {
 
   window.edgeStats.latency = Math.round(elapsedMs);
 
-  // 更新環境亮度與夜間模式增強濾鏡
-  const brightness = calculateBrightness(cameraSource);
-  window.edgeStats.brightness = brightness;
-  window.edgeStats.isNightMode = brightness !== null && brightness < 70;
-
-  if (cameraSource) {
-    cameraSource.style.filter = window.edgeStats.isNightMode
-      ? "contrast(1.5) brightness(1.5)"
-      : "none";
-  }
+  window.ImageEnhancer.update(cameraSource);
 }
 
 function processEdgeFrame() {
@@ -80,7 +54,7 @@ function processEdgeFrame() {
   lastVideoTime = cameraSource.currentTime;
 
   const t0 = performance.now();
-  
+
   detector.aspect = cameraSource.videoWidth / cameraSource.videoHeight;
 
   const result = landmarker.detectForVideo(cameraSource, t0);
