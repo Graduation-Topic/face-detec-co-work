@@ -29,10 +29,10 @@ export class FatigueDetector {
 
     this.earThreshold = this.cfg.EAR_CLOSED_THRESHOLD;
     this.marThreshold = this.cfg.YAWN_THRESHOLD;
-    this.nodThreshold = this.cfg.NOD_RATIO_THRESHOLD ?? 0.30;
-    this.turnCenter = this.cfg.TURN_CENTER ?? 0.50;
+    this.nodThreshold = this.cfg.NOD_RATIO_THRESHOLD ?? 0.3;
+    this.turnCenter = this.cfg.TURN_CENTER ?? 0.5;
     this.turnMargin = this.cfg.TURN_MARGIN ?? 0.25;
-    
+
     this.isCalibrating = false;
     this.isCalibrated = false;
     this.baselineEar = null;
@@ -192,8 +192,8 @@ export class FatigueDetector {
     } else if (mode === "default") {
       this.earThreshold = this.cfg.EAR_CLOSED_THRESHOLD;
       this.marThreshold = this.cfg.YAWN_THRESHOLD;
-      this.nodThreshold = this.cfg.NOD_RATIO_THRESHOLD ?? 0.30;
-      this.turnCenter = this.cfg.TURN_CENTER ?? 0.50;
+      this.nodThreshold = this.cfg.NOD_RATIO_THRESHOLD ?? 0.3;
+      this.turnCenter = this.cfg.TURN_CENTER ?? 0.5;
     } else {
       throw new Error("Invalid mode");
     }
@@ -215,7 +215,9 @@ export class FatigueDetector {
       this.baselineEar = round(avg(this.calEar), 4);
       this.baselineMar = this.calMar.length ? round(avg(this.calMar), 4) : null;
       this.baselineNod = this.calNod.length ? round(avg(this.calNod), 4) : null;
-      this.baselineTurn = this.calTurn.length ? round(avg(this.calTurn), 4) : null;
+      this.baselineTurn = this.calTurn.length
+        ? round(avg(this.calTurn), 4)
+        : null;
 
       this.earThreshold = round(
         this.baselineEar * this.cfg.CALIBRATION_EAR_RATIO,
@@ -264,7 +266,8 @@ export class FatigueDetector {
   _calcHeadPose(lm, t) {
     // 1.計算低頭比例 (Pitch: 鼻尖 1、額頭 10、下巴 152)
     const faceHeight = lm[152].y - lm[10].y;
-    this.nodRatio = faceHeight > 0 ? round((lm[152].y - lm[1].y) / faceHeight, 3) : 0.5;
+    this.nodRatio =
+      faceHeight > 0 ? round((lm[152].y - lm[1].y) / faceHeight, 3) : 0.5;
 
     // 2.計算點頭下墜速度 (Head Drop Velocity)
     if (this.lastNodRatio !== null && this.lastNodTime !== null) {
@@ -279,7 +282,8 @@ export class FatigueDetector {
 
     // 3.計算左右轉頭比例 (Yaw: 鼻尖 1、左臉 234、右臉 454)
     const faceWidth = lm[454].x - lm[234].x;
-    this.turnRatio = faceWidth > 0 ? round((lm[1].x - lm[234].x) / faceWidth, 3) : 0.5;
+    this.turnRatio =
+      faceWidth > 0 ? round((lm[1].x - lm[234].x) / faceWidth, 3) : 0.5;
   }
 
   // ---------- 狀態更新 ----------
@@ -341,7 +345,7 @@ export class FatigueDetector {
     this.yawnTimestamps = this.yawnTimestamps.filter((ts) => t - ts <= 60);
 
     // 4. 低頭打瞌睡與瞬間點頭 (Head Snap) 判定
-    const snapVelThreshold = this.cfg.NOD_SNAP_VELOCITY ?? 0.40;
+    const snapVelThreshold = this.cfg.NOD_SNAP_VELOCITY ?? 0.4;
     if (nodRatio !== null && nodRatio < this.nodThreshold) {
       if (!this.isNodding) {
         this.isNodding = true;
@@ -361,13 +365,14 @@ export class FatigueDetector {
 
     // 5. 左右轉頭分心判定
     this.isLookingAway =
-      turnRatio !== null && Math.abs(turnRatio - this.turnCenter) > this.turnMargin;
+      turnRatio !== null &&
+      Math.abs(turnRatio - this.turnCenter) > this.turnMargin;
   }
 
   _updateFatigue(t) {
     const c = this.cfg;
     // 使用過去 60 秒內的實際哈欠次數計算頻率
-    const yawnRate = this.yawnTimestamps.length; 
+    const yawnRate = this.yawnTimestamps.length;
 
     const perclosScore = Math.min(this.perclos / c.PERCLOS_SEVERE_RATIO, 1);
     const closureScore = Math.min(
@@ -560,7 +565,7 @@ export class FatigueDetector {
       nod_threshold: s.nodThreshold,
       default_ear_threshold: this.cfg.EAR_CLOSED_THRESHOLD,
       default_mar_threshold: this.cfg.YAWN_THRESHOLD,
-      default_nod_threshold: this.cfg.NOD_RATIO_THRESHOLD ?? 0.30,
+      default_nod_threshold: this.cfg.NOD_RATIO_THRESHOLD ?? 0.3,
       baseline_ear_threshold: s.baselineEar,
       baseline_mar_threshold: s.baselineMar,
       baseline_nod_threshold: s.baselineNod,
@@ -568,15 +573,14 @@ export class FatigueDetector {
   }
 
   // ---------- 日誌 / CSV ----------
-
   _log(m, event, wallSec, force = false) {
     if (event === "data" && !force) {
       if (wallSec - this.lastLogTime < this.cfg.LOG_INTERVAL_SEC) return;
       this.lastLogTime = wallSec;
     }
     this.logHistory.push({
-      sessionId: this.sessionId,
       timestamp: wallSec,
+      brightness: window.edgeStats?.brightness ?? null,
       event,
       ear: m.ear,
       mar: m.mar,
@@ -598,8 +602,8 @@ export class FatigueDetector {
 
   exportCSV() {
     const header = [
-      "session_id",
       "datetime",
+      "brightness",
       "event",
       "ear",
       "mar",
@@ -631,8 +635,8 @@ export class FatigueDetector {
 
     const rows = this.logHistory.map((r) =>
       [
-        r.sessionId,
         fmt(r.timestamp),
+        r.brightness,
         r.event,
         r.ear,
         r.mar,
