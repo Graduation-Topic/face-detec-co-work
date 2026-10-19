@@ -727,8 +727,9 @@ body {
 }
 
 .stat-item {
+  flex: 1;
   display: flex;
-  width: 100%;
+  width: auto;
   flex-direction: column;
   gap: 2px;
   padding: 8px 12px;
@@ -1477,7 +1478,6 @@ body {
     display: contents;
   }
 
-  /* 以 order 重新排列各區塊 */
   .fd-video {
     order: 1;
     width: 100%;
@@ -1574,20 +1574,6 @@ body {
 
   #fullscreen-btn {
     display: none;
-  }
-
-  /* ----- Camera state ----- */
-
-  .fd-state {
-    width: 100%;
-    min-width: 0;
-    gap: 6px;
-    padding: 12px 0;
-    overflow-x: auto;
-  }
-
-  .stat-value {
-    font-size: 14px;
   }
 
   /* ----- Control panel ----- */
