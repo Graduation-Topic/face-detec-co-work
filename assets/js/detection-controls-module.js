@@ -372,6 +372,7 @@ document.addEventListener("DOMContentLoaded", () => {
           baseline_ear_threshold: current.baseline_ear_threshold,
           baseline_mar_threshold: current.baseline_mar_threshold,
           fatigue_level: "Normal",
+          brightness: null,
           fatigue_score: null,
         });
 
