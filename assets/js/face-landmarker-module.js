@@ -37,7 +37,7 @@ function ensureEdge() {
           modelAssetPath: EDGE_MODEL_URL,
           delegate,
         },
-        outputFaceBlendshapes: true, // 開啟 52 種 3D 表情深度特徵
+        //outputFaceBlendshapes: true, // 開啟 52 種 3D 表情深度特徵
         runningMode: "VIDEO",
         numFaces: 1,
       });

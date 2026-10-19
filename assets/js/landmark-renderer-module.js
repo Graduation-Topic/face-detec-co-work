@@ -45,16 +45,13 @@ function drawLandmarks(faces) {
 
   if (!cameraSource.videoWidth || !cameraSource.videoHeight) return;
 
-  const videoRect = cameraSource.getBoundingClientRect();
-  const overlayRect = landmarkOverlay.getBoundingClientRect();
-
-  const cssWidth = Math.max(1, overlayRect.width);
-  const cssHeight = Math.max(1, overlayRect.height);
+  // 使用 clientWidth / clientHeight 避免受到 CSS transform: scaleX(-1) 干擾
+  const cssWidth = Math.max(1, landmarkOverlay.clientWidth);
+  const cssHeight = Math.max(1, landmarkOverlay.clientHeight);
 
   const devicePixelRatio = Math.max(1, window.devicePixelRatio || 1);
 
   const canvasWidth = Math.max(1, Math.round(cssWidth * devicePixelRatio));
-
   const canvasHeight = Math.max(1, Math.round(cssHeight * devicePixelRatio));
 
   if (
@@ -66,27 +63,25 @@ function drawLandmarks(faces) {
   }
 
   landmarkContext.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-
   landmarkContext.clearRect(0, 0, cssWidth, cssHeight);
+
+  // 如果設定裡有把特徵點關閉，則清空後直接返回
+  if (window.showLandmarks === false) return;
 
   const videoWidth = cameraSource.videoWidth;
   const videoHeight = cameraSource.videoHeight;
 
+  // 計算 object-fit: contain 的留黑邊比例
   const scale = Math.min(
-    videoRect.width / videoWidth,
-    videoRect.height / videoHeight,
+    cssWidth / videoWidth,
+    cssHeight / videoHeight,
   );
 
   const renderedWidth = videoWidth * scale;
   const renderedHeight = videoHeight * scale;
 
-  const contentOffsetX = (videoRect.width - renderedWidth) / 2;
-
-  const contentOffsetY = (videoRect.height - renderedHeight) / 2;
-
-  const videoOffsetX = videoRect.left - overlayRect.left;
-
-  const videoOffsetY = videoRect.top - overlayRect.top;
+  const contentOffsetX = (cssWidth - renderedWidth) / 2;
+  const contentOffsetY = (cssHeight - renderedHeight) / 2;
 
   for (const face of faces || []) {
     for (const [index, point] of face.entries()) {
@@ -98,28 +93,26 @@ function drawLandmarks(faces) {
         continue;
       }
 
-      const x = videoOffsetX + contentOffsetX + point.x * renderedWidth;
+      const x = contentOffsetX + point.x * renderedWidth;
+      const y = contentOffsetY + point.y * renderedHeight;
 
-      const y = videoOffsetY + contentOffsetY + point.y * renderedHeight;
-
-      landmarkContext.fillStyle = NOSE_LANDMARKS.has(index)
-        ? "#00e5ff"
-        : "#ffffff";
+      // 鼻尖、額頭、下巴、臉頰等關鍵姿態點畫成亮青色，其餘眼嘴點畫成白色
+      const isPosePoint = NOSE_LANDMARKS.has(index);
+      landmarkContext.fillStyle = isPosePoint ? "#00e5ff" : "#ffffff";
 
       landmarkContext.beginPath();
-
       landmarkContext.arc(
         x,
         y,
-        NOSE_LANDMARKS.has(index) ? 3 : 2,
+        isPosePoint ? 3 : 2, 
         0,
         Math.PI * 2,
       );
-
       landmarkContext.fill();
     }
   }
 }
+
 
 function clearLandmarks() {
   window.__latestFaceLandmarks = [];

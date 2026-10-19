@@ -285,7 +285,7 @@ export class FatigueDetector {
   // ---------- 狀態更新 ----------
 
   _updateState(t) {
-    const { ear, mar } = this;
+    const { ear, mar, nodRatio, nodVelocity, turnRatio } = this;
     const closed = ear !== null && ear < this.earThreshold;
 
     // 1.PERCLOS：最近 WINDOWS_SEC 秒內「閉眼樣本 / 全部樣本」
@@ -367,7 +367,7 @@ export class FatigueDetector {
   _updateFatigue(t) {
     const c = this.cfg;
     // 使用過去 60 秒內的實際哈欠次數計算頻率
-    const recentYawnRate = this.yawnTimestamps.length; 
+    const yawnRate = this.yawnTimestamps.length; 
 
     const perclosScore = Math.min(this.perclos / c.PERCLOS_SEVERE_RATIO, 1);
     const closureScore = Math.min(
