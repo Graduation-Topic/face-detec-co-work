@@ -32,8 +32,6 @@ function updateEdgeStats(frameStart, elapsedMs) {
   }
 
   window.edgeStats.latency = Math.round(elapsedMs);
-
-  window.ImageEnhancer.update(cameraSource);
 }
 
 function processEdgeFrame() {
@@ -60,6 +58,8 @@ function processEdgeFrame() {
   const result = landmarker.detectForVideo(cameraSource, t0);
 
   const face = result.faceLandmarks?.[0] ?? null;
+
+  window.ImageEnhancer.update(cameraSource);
 
   detector.update(face, t0 / 1000);
 
