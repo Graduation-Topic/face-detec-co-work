@@ -14,6 +14,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const detector = window.edgeDetector;
       detector?.reset();
 
+      if (window.edgeStats) {
+        window.edgeStats.brightness = null;
+        window.edgeStats.isNightMode = false;
+      }
+
+      const video = document.querySelector("video");
+
+      if (video) {
+        video.style.filter = "none";
+      }
+
       const current = detector ? detector.toApiData() : {};
 
       if (typeof resetCharts === "function") {
@@ -47,7 +58,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
 
-      // 4. Reset backend state
       const response = await fetch("/api/state/reset", {
         method: "POST",
       });
@@ -56,18 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error("Failed to reset backend state");
       }
 
-      // 5. Clear local brightness state and camera filter
-      if (window.edgeStats) {
-        window.edgeStats.brightness = null;
-        window.edgeStats.isNightMode = false;
-      }
-
-      const video = document.querySelector("video");
-      if (video) {
-        video.style.filter = "none";
-      }
-
-      // 6. Log reset event
       if (typeof addSystemLog === "function") {
         addSystemLog("[RESET] Data Cleared", "info");
       }

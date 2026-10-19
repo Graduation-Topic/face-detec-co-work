@@ -102,7 +102,7 @@ function updateData(data) {
       : "--";
 
   // =======================================================
-  // Head & Environment (新增：頭部姿態與環境亮度更新)
+  // Head
   // =======================================================
 
   const pitchEl = document.getElementById("pitch-info");
@@ -119,12 +119,19 @@ function updateData(data) {
       data.turn_ratio != null ? Number(data.turn_ratio).toFixed(2) : "--";
   }
 
+  // =======================================================
+  // Brightness
+  // =======================================================
+
   const brightEl = document.getElementById("brightness-info");
+
   if (brightEl) {
-    const bVal = data.brightness ?? window.edgeStats?.brightness;
-    const isNight = data.is_night_mode ?? window.edgeStats?.isNightMode;
+    const bVal = data.brightness ?? window.edgeStats?.brightness ?? null;
+    const isNight =
+      data.is_night_mode ?? window.edgeStats?.isNightMode ?? false;
+
     brightEl.textContent =
-      bVal != null ? `${bVal} ${isNight ? "(夜間增強)" : ""}` : "--";
+      bVal != null ? `${bVal}${isNight ? " (夜間增強)" : ""}` : "--";
   }
 
   // =======================================================
