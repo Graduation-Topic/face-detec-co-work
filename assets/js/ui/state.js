@@ -11,41 +11,6 @@ function formatSeconds(value, digits = 1) {
 }
 
 // =========================================================
-// info-card 卡片收合
-// =========================================================
-
-function initCollapsibleCards() {
-  document.querySelectorAll(".info-card--collapse").forEach((card) => {
-    const header = card.querySelector(".info-card-header");
-    const summary = card.querySelector(".info-card-summary");
-    const source = document.getElementById(card.dataset.summary);
-
-    if (!header) return;
-
-    header.addEventListener("click", () => {
-      const open = card.classList.toggle("is-open");
-      header.setAttribute("aria-expanded", open);
-    });
-
-    if (source && summary) {
-      const sync = () => {
-        summary.textContent = source.textContent;
-      };
-
-      sync();
-
-      new MutationObserver(sync).observe(source, {
-        childList: true,
-        characterData: true,
-        subtree: true,
-      });
-    }
-  });
-}
-
-initCollapsibleCards();
-
-// =========================================================
 // Data Fetching and Updating
 // =========================================================
 
