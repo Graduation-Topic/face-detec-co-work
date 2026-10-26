@@ -491,12 +491,6 @@
   font-size: 13px;
 }
 
-.info-card-chevron {
-  flex-shrink: 0;
-  color: var(--color-text-secondary);
-  transition: transform 0.25s ease;
-}
-
 .info-card-body {
   display: grid;
   grid-template-rows: 1fr;
