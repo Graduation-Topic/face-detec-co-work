@@ -462,11 +462,6 @@
   pointer-events: none;
 }
 
-.info-card--collapse {
-  padding: 0;
-  gap: 0;
-}
-
 .info-card-header {
   display: flex;
   width: 100%;
@@ -480,12 +475,8 @@
   color: inherit;
   font: inherit;
   text-align: left;
-  cursor: pointer;
+  cursor: default;
   transition: background-color 0.25s ease;
-}
-
-.info-card-header:hover {
-  background-color: var(--color-surface-hover);
 }
 
 .info-card-header:focus-visible {
@@ -506,17 +497,8 @@
   transition: transform 0.25s ease;
 }
 
-.info-card--collapse.is-open .info-card-chevron {
-  transform: rotate(180deg);
-}
-
 .info-card-body {
   display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.25s ease;
-}
-
-.info-card--collapse.is-open .info-card-body {
   grid-template-rows: 1fr;
 }
 
