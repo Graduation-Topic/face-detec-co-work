@@ -457,6 +457,11 @@
   user-select: none;
 }
 
+.info-card--collapse {
+  padding: 0;
+  gap: 0;
+}
+
 .info-card[data-disabled] {
   opacity: 0.6;
   pointer-events: none;
@@ -475,8 +480,12 @@
   color: inherit;
   font: inherit;
   text-align: left;
-  cursor: default;
+  cursor: pointer;
   transition: background-color 0.25s ease;
+}
+
+.info-card-header:hover {
+  background-color: var(--color-surface-hover);
 }
 
 .info-card-header:focus-visible {
@@ -491,8 +500,23 @@
   font-size: 13px;
 }
 
+.info-card-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  transition: transform 0.25s ease;
+}
+
+.info-card--collapse.is-open .info-card-chevron {
+  transform: rotate(180deg);
+}
+
 .info-card-body {
   display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.info-card--collapse.is-open .info-card-body {
   grid-template-rows: 1fr;
 }
 
