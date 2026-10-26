@@ -1,7 +1,3 @@
-/* =========================================
-   Display: Video / Camera
-   ========================================= */
-
 .fd-display {
   display: flex;
   position: relative;
@@ -99,10 +95,6 @@
   transform: translateY(0);
 }
 
-/* =========================================
-   Display: Control Overlay
-   ========================================= */
-
 .fd-overlay {
   display: flex;
   position: absolute;
@@ -193,10 +185,6 @@
 .fd-pill .fullscreen-minimize {
   display: none;
 }
-
-/* =========================================
-   Setting Overlay Modal
-   ========================================= */
 
 .setting-overlay-modal {
   display: none;
@@ -353,10 +341,6 @@
   transform: translate(13px, -50%);
 }
 
-/* =========================================
-   Camera Stats
-   ========================================= */
-
 .fd-state {
   display: flex;
   width: 100%;
@@ -394,10 +378,6 @@
   text-overflow: ellipsis;
 }
 
-/* =========================================
-   Control Panel
-   ========================================= */
-
 .fd-control {
   display: flex;
   flex: 0 0 330px;
@@ -422,14 +402,31 @@
   height: auto;
   flex-direction: row;
   gap: 12px;
-  overflow-x: auto;
   white-space: nowrap;
 }
 
-#fatigue-score {
-  color: #fff;
-  font-family: var(--font-mono);
+.info-card--summary {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: space-between;
+  gap: 8px;
+}
+
+.info-card--summary > span {
+  color: var(--color-text-secondary);
+  font-family: var(--font-inter);
+  font-size: 14px;
+}
+
+.info-card--summary > h3 {
+  display: flex;
+  align-items: center;
+  height: 23px;
   font-size: 16px;
+  color: var(--color-text-primary);
+  font-family: var(--font-inter);
+  transition: color 0.3s ease;
 }
 
 .fatigue-status-danger {
@@ -443,8 +440,6 @@
 .fatigue-status-safe {
   color: #fff;
 }
-
-/* ----- Info card ----- */
 
 .info-card {
   display: flex;
@@ -466,24 +461,6 @@
   opacity: 0.6;
   pointer-events: none;
 }
-
-.info-card--summary {
-  min-width: 120px;
-  border: none;
-  background-color: transparent;
-  padding: 0;
-  border-radius: 0;
-  overflow-x: auto;
-  white-space: nowrap;
-}
-
-.info-card--summary > h3 {
-  font-size: 16px;
-  font-family: var(--font-mono);
-  transition: color 0.3s ease;
-}
-
-/* ----- Info card: collapsible ----- */
 
 .info-card--collapse {
   padding: 0;
@@ -518,19 +495,8 @@
 .info-card-header .info-title {
   flex: 1;
   color: var(--color-text-primary);
-  font-family: var(--font-mono);
+  font-family: var(--font-inter);
   font-size: 13px;
-}
-
-.info-card-summary {
-  color: var(--color-text-secondary);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  transition: opacity 0.2s ease;
-}
-
-.info-card--collapse.is-open .info-card-summary {
-  opacity: 0;
 }
 
 .info-card-chevron {
@@ -578,7 +544,7 @@
   flex-direction: column;
   gap: 2px;
   color: #fff;
-  font-family: var(--font-mono);
+  font-family: var(--font-inter);
   font-size: 13px;
   font-weight: normal;
   white-space: normal;
@@ -738,7 +704,7 @@
 
 .cali-value-label {
   color: var(--color-text-secondary);
-  font-family: var(--font-mono);
+  font-family: var(--font-inter);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -1177,12 +1143,6 @@
   .info-card {
     width: 100%;
     min-width: 0;
-    white-space: normal;
-  }
-
-  .info-card--summary {
-    min-width: 0;
-    overflow-x: hidden;
     white-space: normal;
   }
 
