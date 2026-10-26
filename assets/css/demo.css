@@ -472,6 +472,7 @@
   width: 100%;
   min-height: 44px;
   padding: 0 12px;
+  justify-content: space-between;
   align-items: center;
   gap: 12px;
   background-color: transparent;
@@ -492,7 +493,7 @@
   outline-offset: -2px;
 }
 
-.info-card-header .info-title {
+.info-card-header span {
   flex: 1;
   color: var(--color-text-primary);
   font-family: var(--font-inter);
