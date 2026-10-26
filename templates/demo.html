@@ -584,12 +584,39 @@
             </div>
 
             <section
-              class="info-card"
+              class="info-card info-card--collapse is-open"
             >
-              <div class="info-card-header">
+              <button
+                type="button"
+                class="info-card-header"
+                id="eye-header"
+                aria-expanded="true"
+                aria-controls="eye-body"
+              >
                 <span>Eye</span>
-                <div style="display: flex; align-items: center; gap: 4px">
-                  </div><div class="info-card-body">
+                <svg
+                  class="info-card-chevron"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M18 15L12 9L6 15"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+              <div
+                class="info-card-body"
+                id="eye-body"
+                role="region"
+                aria-labelledby="eye-header"
+              >
                 <div class="info-card-inner">
                   <div class="setting-option-state">
                     <strong>EAR<small>眼部縱横比</small></strong>
@@ -614,12 +641,39 @@
             </section>
 
             <section
-              class="info-card"
+              class="info-card info-card--collapse is-open"
             >
-              <div class="info-card-header">
+              <button
+                type="button"
+                class="info-card-header"
+                id="mouth-header"
+                aria-expanded="true"
+                aria-controls="mouth-body"
+              >
                 <span>Mouth</span>
-                <div style="display: flex; align-items: center; gap: 4px">
-                  </div><div class="info-card-body">
+                <svg
+                  class="info-card-chevron"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M18 15L12 9L6 15"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+              <div
+                class="info-card-body"
+                id="mouth-body"
+                role="region"
+                aria-labelledby="mouth-header"
+              >
                 <div class="info-card-inner">
                   <div class="setting-option-state">
                     <strong>MAR<small>嘴部縱横比</small></strong>
@@ -638,12 +692,39 @@
             </section>
 
             <section
-              class="info-card"
+              class="info-card info-card--collapse is-open"
             >
-              <div class="info-card-header">
+              <button
+                type="button"
+                class="info-card-header"
+                id="head-header"
+                aria-expanded="true"
+                aria-controls="head-body"
+              >
                 <span>Head</span>
-                <div style="display: flex; align-items: center; gap: 4px">
-                  </div><div class="info-card-body">
+                <svg
+                  class="info-card-chevron"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M18 15L12 9L6 15"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+              <div
+                class="info-card-body"
+                id="head-body"
+                role="region"
+                aria-labelledby="head-header"
+              >
                 <div class="info-card-inner">
                   <div class="setting-option-state">
                     <strong>Pitch<small>頭部傾斜率 (下墜速度)</small></strong>
