@@ -77,6 +77,8 @@ export class FatigueDetector {
     this.nodDur = 0;
     this.isSnapNodding = false;
 
+    this.nodHistory = [];
+
     this.turnRatio = null;
     this.isLookingAway = false;
 
@@ -357,13 +359,26 @@ export class FatigueDetector {
       this.isNodding = false;
       this.nodStart = null;
     }
-    // 瞬間點頭攔截：下墜速度超標，且頭部角度已低於微傾門檻
-    this.isSnapNodding =
-      nodRatio !== null &&
-      nodVelocity > snapVelThreshold &&
-      nodRatio < this.nodThreshold + 0.02;
+    
+    // 5. 瞬間點頭 (Head Snap)  
+    if (this.nodRatio !== null) {
+      this.nodHistory.push({ t, ratio: this.nodRatio });
+    }
+    // 只保留最近 0.3 秒內的紀錄
+    this.nodHistory = this.nodHistory.filter((h) => t - h.t <= 0.3);
 
-    // 5. 左右轉頭分心判定
+    let maxRatioInWindow = this.nodRatio;
+    if (this.nodHistory.length > 0) {
+      maxRatioInWindow = Math.max(...this.nodHistory.map((h) => h.ratio));
+    }
+
+    // 觸發條件：0.3 秒內高度急遽下降超過 0.06，且頭部角度已低於 0.45 (微低頭)
+    this.isSnapNodding =
+      this.nodRatio !== null &&
+      maxRatioInWindow - this.nodRatio > 0.06 &&
+      this.nodRatio < 0.45;
+
+    // 6. 左右轉頭分心判定
     this.isLookingAway =
       turnRatio !== null &&
       Math.abs(turnRatio - this.turnCenter) > this.turnMargin;
