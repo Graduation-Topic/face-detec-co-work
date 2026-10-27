@@ -114,3 +114,10 @@ class Config:
 
     # 日誌
     LOG_INTERVAL_SEC = 0.2
+
+    # ========== 環境亮度與高光門檻 ==========
+    ENV_LUMA_HIGHLIGHT = 220           # 像素 RGB 亮度大於此值，視為高光/車燈/反光
+    ENV_NIGHT_BRIGHTNESS = 70          # 畫面平均亮度小於此值，進入夜間模式
+    ENV_NIGHT_HIGHLIGHT_RATIO = 0.05   # 夜間模式下，高光像素佔比 > 5%，啟動「壓高光」
+    ENV_DAY_BRIGHTNESS = 180           # 畫面平均亮度大於此值，啟動「強光壓制」
+    ENV_DAY_HIGHLIGHT_RATIO = 0.15     # 畫面高光像素佔比 > 15%，啟動「強光壓制」

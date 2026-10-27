@@ -122,9 +122,9 @@ function updateData(data) {
   const brightEl = document.getElementById("brightness-info");
   if (brightEl) {
     const bVal = data.brightness ?? window.edgeStats?.brightness;
-    const isNight = data.is_night_mode ?? window.edgeStats?.isNightMode;
+    const envStatus = window.edgeStats?.envStatus || "";
     brightEl.textContent =
-      bVal != null ? `${bVal} ${isNight ? "(🌙 夜間增強)" : ""}` : "--";
+      bVal != null ? `${bVal} ${envStatus}` : "--";
   }
   
   // =======================================================
