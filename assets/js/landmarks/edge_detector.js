@@ -83,6 +83,11 @@ function ensureEdge() {
 
     window.edgeDetector = new detectorModule.FatigueDetector({
       config,
+      onAlert: (alertInfo) => {
+        if (typeof window.handleAlertEvent === "function") {
+          window.handleAlertEvent(alertInfo);
+        }
+      },
     });
 
     if (typeof addSystemLog === "function") {

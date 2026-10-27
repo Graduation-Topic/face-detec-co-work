@@ -115,5 +115,52 @@ function initializeAlert() {
   hideAlert();
 }
 
+// ===== Alert Event Dispatcher to Backend =====
+window.handleAlertEvent = async function handleAlertEvent(alertInfo) {
+  try {
+    const sessionId =
+      window.edgeDetector?.sessionId ||
+      sessionStorage.getItem("fatigue-detection-session-id");
+
+    if (typeof addSystemLog === "function") {
+      addSystemLog(
+        `[警報] 觸發警告：${alertInfo.reason} (次數: ${alertInfo.count})`,
+        "warning",
+      );
+    }
+
+    const response = await fetch("/api/alert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: sessionId,
+        score: alertInfo.score,
+        level: alertInfo.level,
+        reason: alertInfo.reason,
+        count: alertInfo.count,
+        timestamp: Date.now() / 1000,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn("[ALERT API] Server returned status", response.status);
+      return;
+    }
+
+    const result = await response.json();
+    if (result.is_new_escalation) {
+      const windowMin = Math.round((result.window_sec || 300) / 60);
+      if (typeof addSystemLog === "function") {
+        addSystemLog(
+          `🚨 [後台通報] 警告已在 ${windowMin} 分鐘內累積達 ${result.window_count} 次，已通報後台管理者！`,
+          "error",
+        );
+      }
+    }
+  } catch (error) {
+    console.error("[ALERT] Failed to post alert event:", error);
+  }
+};
+
 initializeAlert();
 document.addEventListener("DOMContentLoaded", initializeAlert, { once: true });

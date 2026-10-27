@@ -2,6 +2,7 @@ import os
 
 from flask import Flask, jsonify, render_template, request, send_from_directory
 
+from alert_manager import AlertManager
 from config import Config
 from state import State
 
@@ -12,7 +13,13 @@ app = Flask(
     template_folder="templates",
 )
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
 state = State(fps=Config.FPS, window_sec=Config.WINDOWS_SEC)
+alert_manager = AlertManager(
+    window_sec=Config.ALERT_WINDOW_SEC,
+    trigger_count=Config.ALERT_TRIGGER_COUNT,
+    notify_cooldown_sec=Config.ALERT_COOLDOWN_NOTIFY_SEC,
+)
 
 
 # 路徑設定
@@ -86,6 +93,11 @@ def api_config():
         "ALERT_COOLDOWN_SECONDS": Config.ALERT_COOLDOWN_SECONDS,
         "LOG_INTERVAL_SEC": Config.LOG_INTERVAL_SEC,
 
+        # 警報累計與後台通報門檻
+        "ALERT_WINDOW_SEC": Config.ALERT_WINDOW_SEC,
+        "ALERT_TRIGGER_COUNT": Config.ALERT_TRIGGER_COUNT,
+        "ALERT_COOLDOWN_NOTIFY_SEC": Config.ALERT_COOLDOWN_NOTIFY_SEC,
+
         # 新增：環境亮度與高光門檻輸出至前端
         "ENV_LUMA_HIGHLIGHT": Config.ENV_LUMA_HIGHLIGHT,
         "ENV_NIGHT_BRIGHTNESS": Config.ENV_NIGHT_BRIGHTNESS,
@@ -110,7 +122,61 @@ def update_state():
 @app.route("/api/state/reset", methods=["POST"])
 def reset_state():
     state.reset_metrics()
+    alert_manager.reset()
     return jsonify(state.snapshot())
+
+
+# ========== 警報與後台管理 API ==========
+@app.route("/api/alert", methods=["POST"])
+def api_record_alert():
+    """接收前端嚴重警告事件，並進行滑動視窗累計與通報判定"""
+    data = request.get_json(silent=True) or {}
+    session_id = data.get("session_id")
+    score = float(data.get("score", 0.0))
+    level = str(data.get("level", "Severe"))
+    reason = str(data.get("reason", "疲勞警告"))
+    count = data.get("count")
+    timestamp = data.get("timestamp")
+
+    result = alert_manager.record_alert(
+        session_id=session_id,
+        score=score,
+        level=level,
+        reason=reason,
+        count=count,
+        timestamp=timestamp,
+        extra=data.get("extra"),
+    )
+
+    # 同步更新當前 state 狀態
+    state.escalated_alert = result["is_escalated"]
+    state.recent_alert_count = result["window_count"]
+
+    return jsonify(result)
+
+
+@app.route("/api/admin/alerts", methods=["GET"])
+def api_admin_alerts():
+    """提供後台管理者或老闆查詢即時警報與通報紀錄"""
+    limit = int(request.args.get("limit", 50))
+    return jsonify({
+        "status": alert_manager.get_status(),
+        "recent_alerts": alert_manager.get_recent_alerts(limit=limit),
+        "escalations": alert_manager.get_escalation_history(limit=limit),
+    })
+
+
+@app.route("/api/admin/alerts/reset", methods=["POST"])
+def api_admin_alerts_reset():
+    """管理員手動重置警報狀態"""
+    alert_manager.reset()
+    state.escalated_alert = False
+    state.recent_alert_count = 0
+    return jsonify({
+        "status": "success",
+        "message": "警報統計與通報狀態已重置",
+        "data": alert_manager.get_status(),
+    })
 
 
 @app.route("/model/<path:filename>")

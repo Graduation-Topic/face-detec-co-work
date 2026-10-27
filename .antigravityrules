@@ -1,0 +1,54 @@
+Project Overview
+
+System: Real-time Driver Fatigue and Distraction Detection System.
+
+Core Mechanism: Uses browser-based Edge Computing (MediaPipe) to analyze facial landmarks (eyes, mouth, head pose) and environment lighting.
+
+Architecture & Tech Stack
+
+Frontend: JavaScript (Modularized), HTML, CSS. Handles real-time video streaming, AI inference, logic calculation, and UI rendering.
+
+Backend: Python (Flask). Acts as the central configuration and state management server.
+
+Critical Development Rules (MUST FOLLOW)
+
+Configuration-Driven (Strict):
+
+NEVER hardcode logic thresholds, weights, or environment values (e.g., 220, 0.3, 1.5) in JavaScript files.
+
+All configurations MUST be placed in the backend config.py and fetched via fetch("/api/config").
+
+Coordinate Calculation Bug Prevention:
+
+Because the UI uses transform: scaleX(-1) to mirror the video, NEVER use getBoundingClientRect() for Canvas or Video elements. Use clientWidth and clientHeight instead to prevent coordinate drifting.
+
+MediaPipe Compatibility:
+
+Do NOT set outputFaceBlendshapes: true in the FaceLandmarker initialization. It will crash the local .task model (FPS=0). Rely purely on 3D landmarks for pose detection.
+
+Fatigue & Distraction Logic (Core Algorithms):
+
+Dual-Track Scoring:
+
+Chronic Fatigue: Calculate a 0-100 score based on PERCLOS (Percentage of Eye Closure over a time window), eye closure duration, and yawn rate. Apply penalty weights for nodding and looking away.
+
+Critical Interception: Immediately force a 100% severe alert if microsleep (closure >= 1.5s), deep nodding (>= 1.5s), or a head snap occurs.
+
+Head Snap (Nodding): Use a "0.3-second sliding window (Drop Delta)" for detection. Trigger if the current pitch drops significantly (e.g., > 0.06) from the maximum pitch within the last 0.3 seconds, rather than using frame-by-frame physical velocity.
+
+Yawn Rate: Calculate based on the actual count of yawns within a strict 60-second sliding window, not the total runtime.
+
+Distraction (Yaw): Determine looking away by calculating the horizontal distance ratio between the nose tip and the left/right cheeks.
+
+Workflow Rule (Git Synchronization)
+
+Always Check for Updates First: My teammate frequently updates folder structures and file names. Before providing code modifications or suggesting architectural changes, ALWAYS ask me if I have run git pull to get the latest version from GitHub, or instruct me to do so, to avoid merge conflicts.
+
+## Git Workflow Rules (Git 協作鐵則)
+1. **Sync Before Work**: Whenever the user asks to start a new task or says "start work", the AI MUST first check if the current branch is synced with `main`.
+2. **Offer Terminal Commands**: If the branch might be outdated, the AI should offer to run the following commands in the terminal using the tool (or provide them for the user to run):
+   - `git checkout main`
+   - `git pull`
+   - `git checkout <user's current branch>`
+   - `git merge main`
+3. **Commit Reminder**: After finishing a major feature (like Fatigue Logic or Lighting Module), remind the user to `git add` and `git commit` before moving to the next task.

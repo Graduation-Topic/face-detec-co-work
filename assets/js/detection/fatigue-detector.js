@@ -449,11 +449,30 @@ export class FatigueDetector {
     this.lastAlertTime = t;
     this.alertCount += 1;
     this.beepPending = true;
+    let reason = "疲勞指數過高 (Severe Fatigue)";
+    const microsleepDur = this.cfg.MICROSLEEP_MIN_DURATION ?? 1.5;
+    const nodMinDur = this.cfg.NOD_MIN_DURATION ?? 1.5;
+
+    if (this.eyeClosureDur >= microsleepDur) {
+      reason = "微睡眠 (Microsleep)";
+    } else if (this.isSnapNodding) {
+      reason = "打瞌睡瞬間點頭 (Head Snap)";
+    } else if (this.nodDur >= nodMinDur) {
+      reason = "持續低頭 (Deep Nodding)";
+    } else if (this.perclos >= (this.cfg.PERCLOS_SEVERE_RATIO ?? 0.4)) {
+      reason = "長時間閉眼 (High PERCLOS)";
+    } else if (
+      this.yawnTimestamps.length >= (this.cfg.YAWN_RATE_SEVERE_PER_MIN ?? 3)
+    ) {
+      reason = "頻繁打哈欠 (Frequent Yawning)";
+    }
+
     if (this.onAlert)
       this.onAlert({
         score: this.fatigueScore,
         level: this.fatigueLevel,
         count: this.alertCount,
+        reason,
       });
   }
 
