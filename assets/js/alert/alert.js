@@ -73,8 +73,11 @@ function initializeAlert() {
     if (eyeClosureDur >= microsleepDur) {
       alertText = "致命危險：微睡眠發生 (Microsleep)！";
       isCritical = true;
-    } else if (isSnapNodding || nodDur >= nodMinDur) {
+    } else if (isSnapNodding) {
       alertText = "致命危險：打瞌睡點頭 (Head Snap)！";
+      isCritical = true;
+    } else if (nodDur >= nodMinDur) {
+      alertText = "致命危險：持續低頭打瞌睡！";
       isCritical = true;
     }
 
