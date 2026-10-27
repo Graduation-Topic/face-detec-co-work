@@ -76,6 +76,9 @@ export class FatigueDetector {
     this.nodStart = null;
     this.nodDur = 0;
     this.isSnapNodding = false;
+    this.snapHitFrames = 0;
+
+    this.nodHistory = [];
 
     this.turnRatio = null;
     this.isLookingAway = false;
@@ -289,7 +292,7 @@ export class FatigueDetector {
   // ---------- 狀態更新 ----------
 
   _updateState(t) {
-    const { ear, mar, nodRatio, nodVelocity, turnRatio } = this;
+    const { ear, mar, nodRatio, turnRatio } = this;
     const closed = ear !== null && ear < this.earThreshold;
 
     // 1.PERCLOS：最近 WINDOWS_SEC 秒內「閉眼樣本 / 全部樣本」
@@ -345,7 +348,6 @@ export class FatigueDetector {
     this.yawnTimestamps = this.yawnTimestamps.filter((ts) => t - ts <= 60);
 
     // 4. 低頭打瞌睡與瞬間點頭 (Head Snap) 判定
-    const snapVelThreshold = this.cfg.NOD_SNAP_VELOCITY ?? 0.4;
     if (nodRatio !== null && nodRatio < this.nodThreshold) {
       if (!this.isNodding) {
         this.isNodding = true;
@@ -357,13 +359,39 @@ export class FatigueDetector {
       this.isNodding = false;
       this.nodStart = null;
     }
-    // 瞬間點頭攔截：下墜速度超標，且頭部角度已低於微傾門檻
-    this.isSnapNodding =
-      nodRatio !== null &&
-      nodVelocity > snapVelThreshold &&
-      nodRatio < this.nodThreshold + 0.02;
 
-    // 5. 左右轉頭分心判定
+    // 5. 瞬間點頭 (Head Snap)：視窗內 nodRatio 急降 + 已微低頭
+    const snapWindowSec = this.cfg.NOD_SNAP_WINDOW_SEC ?? 0.3;
+    const snapDrop = this.cfg.NOD_SNAP_DROP ?? 0.06;
+    const snapRatioLimit =
+      this.nodThreshold + (this.cfg.NOD_SNAP_RATIO_OFFSET ?? 0.15);
+    const snapMinFrames = this.cfg.NOD_SNAP_MIN_FRAMES ?? 2;
+
+    if (this.nodRatio !== null) {
+      this.nodHistory.push({ t, ratio: this.nodRatio });
+    }
+    while (this.nodHistory.length && t - this.nodHistory[0].t > snapWindowSec) {
+      this.nodHistory.shift();
+    }
+
+    let snapCandidate = false;
+    if (this.nodRatio !== null && this.nodHistory.length > 0) {
+      const maxRatioInWindow = Math.max(
+        ...this.nodHistory.map((h) => h.ratio),
+      );
+      snapCandidate =
+        maxRatioInWindow - this.nodRatio > snapDrop &&
+        this.nodRatio < snapRatioLimit;
+    }
+
+    if (snapCandidate) {
+      this.snapHitFrames += 1;
+    } else {
+      this.snapHitFrames = 0;
+    }
+    this.isSnapNodding = this.snapHitFrames >= snapMinFrames;
+
+    // 6. 左右轉頭分心判定
     this.isLookingAway =
       turnRatio !== null &&
       Math.abs(turnRatio - this.turnCenter) > this.turnMargin;
@@ -478,7 +506,10 @@ export class FatigueDetector {
       this.nodStart = null;
       this.nodDur = 0;
       this.isSnapNodding = false;
+      this.snapHitFrames = 0;
+      this.nodHistory = [];
       this.isLookingAway = false;
+      this._updateFatigue(t);
     }
 
     this._log(

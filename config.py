@@ -83,7 +83,10 @@ class Config:
     # ========== 頭部姿態與環境門檻 ==========
     NOD_RATIO_THRESHOLD = 0.30      # 預設低頭比例門檻
     NOD_MIN_DURATION = 1.5          # 持續低頭打瞌睡門檻 (秒)
-    NOD_SNAP_VELOCITY = 0.40        # 瞬間點頭下墜速度門檻 (Head Snap)
+    NOD_SNAP_WINDOW_SEC = 0.3       # Head Snap 滑動視窗 (秒)
+    NOD_SNAP_DROP = 0.06            # 視窗內 nodRatio 急降量門檻
+    NOD_SNAP_RATIO_OFFSET = 0.15    # snap 低頭上限 = nod_threshold + offset（預設 0.45）
+    NOD_SNAP_MIN_FRAMES = 2         # 連續滿足條件的幀數，避免單幀雜訊
     TURN_CENTER = 0.50              # 預設正視前方中心點
     TURN_MARGIN = 0.25              # 左右轉頭分心容許範圍
 
@@ -95,7 +98,7 @@ class Config:
     CALIBRATION_EAR_RATIO = 0.75
     # mar_threshold = baseline_mar + CALIBRATION_MAR_OFFSET
     CALIBRATION_MAR_OFFSET = 0.25
-    # nod_threshold = baseline_nod + CALIBRATION_nod_OFFSET
+    # nod_threshold = baseline_nod - CALIBRATION_NOD_OFFSET
     CALIBRATION_NOD_OFFSET = 0.04
 
     # 疲勞分數
@@ -114,3 +117,10 @@ class Config:
 
     # 日誌
     LOG_INTERVAL_SEC = 0.2
+
+    # ========== 環境亮度與高光門檻 ==========
+    ENV_LUMA_HIGHLIGHT = 220           # 像素 RGB 亮度大於此值，視為高光/車燈/反光
+    ENV_NIGHT_BRIGHTNESS = 70          # 畫面平均亮度小於此值，進入夜間模式
+    ENV_NIGHT_HIGHLIGHT_RATIO = 0.05   # 夜間模式下，高光像素佔比 > 5%，啟動「壓高光」
+    ENV_DAY_BRIGHTNESS = 180           # 畫面平均亮度大於此值，啟動「強光壓制」
+    ENV_DAY_HIGHLIGHT_RATIO = 0.15     # 畫面高光像素佔比 > 15%，啟動「強光壓制」

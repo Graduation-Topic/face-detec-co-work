@@ -85,7 +85,7 @@ function updateData(data) {
       : "--";
 
   // =======================================================
-  // Head
+  // Head 
   // =======================================================
 
   const pitchEl = document.getElementById("pitch-info");
@@ -107,14 +107,11 @@ function updateData(data) {
   // =======================================================
 
   const brightEl = document.getElementById("brightness-info");
-
   if (brightEl) {
-    const bVal = data.brightness ?? window.edgeStats?.brightness ?? null;
-    const isNight =
-      data.is_night_mode ?? window.edgeStats?.isNightMode ?? false;
-
+    const bVal = data.brightness ?? window.edgeStats?.brightness;
+    const envStatus = window.edgeStats?.envStatus || "";
     brightEl.textContent =
-      bVal != null ? `${bVal}${isNight ? " (夜間增強)" : ""}` : "--";
+      bVal != null ? `${bVal} ${envStatus}` : "--";
   }
 
   // =======================================================
