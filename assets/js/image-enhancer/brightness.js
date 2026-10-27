@@ -1,16 +1,16 @@
 // ===== Environment & Lighting Analysis Module =====
 // 負責：中心測光、壓高光檢測、影像環境分析
 
-const hiddenCanvas = document.createElement("canvas");
+  const hiddenCanvas = document.createElement("canvas");
 const hiddenCtx = hiddenCanvas.getContext("2d", { willReadFrequently: true });
-hiddenCanvas.width = 64;
-hiddenCanvas.height = 64;
+  hiddenCanvas.width = 64;
+  hiddenCanvas.height = 64;
 
 function analyzeEnvironment(videoEl) {
   if (!videoEl || !videoEl.videoWidth) return { brightness: null, highlightRatio: 0 };
-  
-  hiddenCtx.drawImage(videoEl, 0, 0, 64, 64);
-  const data = hiddenCtx.getImageData(0, 0, 64, 64).data;
+
+    hiddenCtx.drawImage(videoEl, 0, 0, 64, 64);
+    const data = hiddenCtx.getImageData(0, 0, 64, 64).data;
 
   // 動態讀取後端設定，若未讀取到則使用預設值防呆
   const lumaHighlightThresh = window.edgeConfig?.ENV_LUMA_HIGHLIGHT ?? 220;

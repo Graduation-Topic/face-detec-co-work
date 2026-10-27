@@ -1,4 +1,3 @@
-// ===== Realtime charts =====
 const MAX_POINTS = 50;
 
 let earChart = null;

@@ -15,11 +15,28 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 state = State(fps=Config.FPS, window_sec=Config.WINDOWS_SEC)
 
 
+# 路徑設定
 @app.route("/")
 @app.route("/index")
 @app.route("/index.html")
 def index():
     response = app.make_response(render_template("index.html"))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    return response
+
+
+@app.route("/demo")
+@app.route("/demo.html")
+def demo():
+    response = app.make_response(render_template("demo.html"))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    return response
+
+
+@app.route("/login")
+@app.route("/login.html")
+def login():
+    response = app.make_response(render_template("login.html"))
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     return response
 

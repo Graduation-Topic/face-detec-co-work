@@ -291,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
           window.edgeDetector?.selectCalibration("default");
 
           if (typeof addSystemLog === "function") {
-            addSystemLog("[CALIBRATION] Default", "info");
+            addSystemLog("[CALIBRATION] 預設模式", "info");
           }
         } catch (error) {
           console.error("[CALIBRATION]", error);
@@ -309,7 +309,7 @@ document.addEventListener("DOMContentLoaded", () => {
           statusText.textContent = "尚未校準";
 
           if (typeof addSystemLog === "function") {
-            addSystemLog("[CALIBRATION] Baseline", "info");
+            addSystemLog("[CALIBRATION] 校準模式", "info");
           }
 
           return;
@@ -330,57 +330,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         return;
-      }
-    });
-  });
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const resetBtns = [document.getElementById("reset-data-button")].filter(
-    Boolean,
-  );
-
-  resetBtns.forEach((resetBtn) => {
-    resetBtn.addEventListener("click", async () => {
-      if (resetBtn.disabled) return;
-
-      try {
-        resetBtn.disabled = true;
-
-        const detector = window.edgeDetector;
-        detector?.reset();
-
-        const current = detector ? detector.toApiData() : {};
-
-        resetCharts();
-
-        updateData({
-          fps: 0,
-          latency: null,
-          faces: 0,
-          ear: null,
-          mar: null,
-          blink_times: 0,
-          yawn_times: 0,
-          eye_closure_dur: null,
-          yawn_dur: null,
-          perclos: null,
-          ear_threshold: current.ear_threshold,
-          mar_threshold: current.mar_threshold,
-          default_ear_threshold: current.default_ear_threshold,
-          default_mar_threshold: current.default_mar_threshold,
-          baseline_ear_threshold: current.baseline_ear_threshold,
-          baseline_mar_threshold: current.baseline_mar_threshold,
-          fatigue_level: "Normal",
-          fatigue_score: null,
-        });
-
-        addSystemLog("[RESET] Data Cleared", "info");
-      } catch (error) {
-        console.error("[ERROR]", error);
-        addSystemLog(`[ERROR] ${error.message}`, "error");
-      } finally {
-        resetBtn.disabled = false;
       }
     });
   });
