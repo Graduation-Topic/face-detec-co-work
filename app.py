@@ -1,9 +1,19 @@
 import os
 
-from flask import Flask, jsonify, render_template, request, send_from_directory
+# ========== 環境偵測：本地 vs Render ==========
+# Render 啟動時會自動注入 PORT 環境變數；本地開發則不會有這個變數。
+# 藉此判斷目前執行環境，決定要不要載入 .env 檔案。
+IS_RENDER = os.environ.get("PORT") is not None
 
+if not IS_RENDER:
+    # 本地開發環境：從 .env 檔案載入環境變數（.env 已加入 .gitignore，不會上傳到 GitHub）
+    from dotenv import load_dotenv
+    load_dotenv()
+
+from flask import Flask, jsonify, render_template, request, send_from_directory
 from alert_manager import AlertManager
 from config import Config
+from database import AlertEvent, init_db, SessionLocal
 from state import State
 
 
@@ -20,6 +30,9 @@ alert_manager = AlertManager(
     trigger_count=Config.ALERT_TRIGGER_COUNT,
     notify_cooldown_sec=Config.ALERT_COOLDOWN_NOTIFY_SEC,
 )
+
+# 啟動時建立資料表（若已存在則跳過）
+init_db()
 
 
 # 路徑設定
@@ -98,7 +111,7 @@ def api_config():
         "ALERT_TRIGGER_COUNT": Config.ALERT_TRIGGER_COUNT,
         "ALERT_COOLDOWN_NOTIFY_SEC": Config.ALERT_COOLDOWN_NOTIFY_SEC,
 
-        # 新增：環境亮度與高光門檻輸出至前端
+        # 環境亮度與高光門檻輸出至前端
         "ENV_LUMA_HIGHLIGHT": Config.ENV_LUMA_HIGHLIGHT,
         "ENV_NIGHT_BRIGHTNESS": Config.ENV_NIGHT_BRIGHTNESS,
         "ENV_NIGHT_HIGHLIGHT_RATIO": Config.ENV_NIGHT_HIGHLIGHT_RATIO,
@@ -127,9 +140,10 @@ def reset_state():
 
 
 # ========== 警報與後台管理 API ==========
+
 @app.route("/api/alert", methods=["POST"])
 def api_record_alert():
-    """接收前端嚴重警告事件，並進行滑動視窗累計與通報判定"""
+    """接收前端嚴重警告事件，進行滑動視窗累計、通報判定，並寫入資料庫"""
     data = request.get_json(silent=True) or {}
     session_id = data.get("session_id")
     score = float(data.get("score", 0.0))
@@ -138,6 +152,7 @@ def api_record_alert():
     count = data.get("count")
     timestamp = data.get("timestamp")
 
+    # 1. AlertManager 處理滑動視窗邏輯
     result = alert_manager.record_alert(
         session_id=session_id,
         score=score,
@@ -148,33 +163,71 @@ def api_record_alert():
         extra=data.get("extra"),
     )
 
-    # 同步更新當前 state 狀態
+    # 2. 同步更新當前 state 狀態
     state.escalated_alert = result["is_escalated"]
     state.recent_alert_count = result["window_count"]
+
+    # 3. 寫入資料庫（異常不影響主流程回應）
+    try:
+        db = SessionLocal()
+        event = AlertEvent(
+            session_id=session_id,
+            score=score,
+            level=level,
+            reason=reason,
+            client_count=count,
+            window_count=result["window_count"],
+            is_escalated=1 if result["is_escalated"] else 0,
+            is_new_escalation=1 if result["is_new_escalation"] else 0,
+            client_timestamp=timestamp,
+        )
+        db.add(event)
+        db.commit()
+    except Exception as e:
+        app.logger.error(f"[DB] Failed to save alert event: {e}")
+    finally:
+        db.close()
 
     return jsonify(result)
 
 
 @app.route("/api/admin/alerts", methods=["GET"])
 def api_admin_alerts():
-    """提供後台管理者或老闆查詢即時警報與通報紀錄"""
+    """提供後台管理者或老闆查詢即時警報與通報紀錄（優先從資料庫查詢）"""
     limit = int(request.args.get("limit", 50))
+
+    # 從資料庫讀取最新警告事件（依時間倒序）
+    try:
+        db = SessionLocal()
+        db_events = (
+            db.query(AlertEvent)
+            .order_by(AlertEvent.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        recent_alerts_from_db = [e.to_dict() for e in db_events]
+    except Exception as e:
+        app.logger.error(f"[DB] Failed to query alert events: {e}")
+        recent_alerts_from_db = []
+    finally:
+        db.close()
+
     return jsonify({
         "status": alert_manager.get_status(),
-        "recent_alerts": alert_manager.get_recent_alerts(limit=limit),
+        "recent_alerts": recent_alerts_from_db,
         "escalations": alert_manager.get_escalation_history(limit=limit),
     })
 
 
 @app.route("/api/admin/alerts/reset", methods=["POST"])
 def api_admin_alerts_reset():
-    """管理員手動重置警報狀態"""
+    """管理員手動重置記憶體中的警報滑動視窗狀態（不刪除資料庫紀錄）"""
     alert_manager.reset()
     state.escalated_alert = False
     state.recent_alert_count = 0
     return jsonify({
         "status": "success",
-        "message": "警報統計與通報狀態已重置",
+        "message": "警報統計與通報狀態已重置（資料庫紀錄保留）",
         "data": alert_manager.get_status(),
     })
 
@@ -188,10 +241,15 @@ def model_file(filename):
 
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 4000))
+    debug = os.environ.get("FLASK_DEBUG") == "1"
+
+    print(f"[ENV] Running on {'Render' if IS_RENDER else 'Local'} | port={port} | debug={debug}")
+
     app.run(
         host="0.0.0.0",
-        port=int(os.environ.get("PORT", 4000)),
-        debug=os.environ.get("FLASK_DEBUG") == "1",
-        use_reloader=os.environ.get("FLASK_DEBUG") == "1",
+        port=port,
+        debug=debug,
+        use_reloader=debug,
         threaded=True,
     )
