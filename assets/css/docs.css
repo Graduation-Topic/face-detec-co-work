@@ -10,13 +10,14 @@
 }
 
 .docs-sidebar {
+  flex: 0 0 240px;
   display: flex;
-  flex-direction: column;
-  position: sticky;
-  top: 90px;
-  align-self: flex-start;
   width: 240px;
   max-height: calc(100vh - 100px);
+  flex-direction: column;
+  align-self: flex-start;
+  position: sticky;
+  top: 90px;
   overflow-y: auto;
   gap: 8px;
   z-index: 1;
@@ -212,6 +213,7 @@
   }
 
   .docs-sidebar {
+    flex: none;
     position: static;
     width: 100%;
     height: auto;
