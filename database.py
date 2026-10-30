@@ -7,7 +7,7 @@ database.py — 資料庫連線與表格定義
 - 不需要改任何程式碼，只要設定環境變數即可
 
 資料表：
-- users        ─ 使用者帳號
+- users        ─ 使用者帳號（支援 admin / driver 角色）
 - alert_events ─ 警告事件紀錄（每次 /api/alert 觸發時儲存）
 """
 
@@ -16,6 +16,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     Column,
     DateTime,
     Float,
@@ -71,12 +72,14 @@ class Base(DeclarativeBase):
 
 
 class User(Base):
-    """使用者帳號表"""
+    """使用者帳號表（支援 admin / driver 角色）"""
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(64), unique=True, nullable=False, index=True)
     display_name = Column(String(128), nullable=True)
+    password_hash = Column(String(256), nullable=False)
+    role = Column(String(16), nullable=False, default="driver")  # "admin" or "driver"
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     def to_dict(self):
@@ -84,6 +87,7 @@ class User(Base):
             "id": self.id,
             "username": self.username,
             "display_name": self.display_name,
+            "role": self.role,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
@@ -93,7 +97,7 @@ class AlertEvent(Base):
     警告事件紀錄表
 
     每次前端觸發 /api/alert 時（fatigueLevel == Severe），
-    後端會寫入一筆紀錄到這張表，永久保存。
+    後端會寫入一筆紀錄到這張表。舊資料依 ALERT_RETENTION_DAYS 自動清理。
     """
     __tablename__ = "alert_events"
 
@@ -150,3 +154,71 @@ def get_db():
     finally:
         db.close()
 
+
+# ========== 管理功能 ==========
+
+def purge_old_alerts(db):
+    """
+    自動清理過期的警告事件紀錄。
+    1. 刪除超過 ALERT_RETENTION_DAYS 天前的記錄
+    2. 若總筆數超過 ALERT_MAX_DB_RECORDS，刪除最舊的超量部分
+    """
+    from datetime import timedelta
+    from config import Config
+
+    deleted_count = 0
+
+    # 1. 按時間刪除（超過保留天數）
+    cutoff_date = datetime.utcnow() - timedelta(days=Config.ALERT_RETENTION_DAYS)
+    old_by_date = (
+        db.query(AlertEvent)
+        .filter(AlertEvent.created_at < cutoff_date)
+        .delete(synchronize_session=False)
+    )
+    deleted_count += old_by_date
+
+    # 2. 按總數限制刪除（保留最新 N 筆）
+    total = db.query(AlertEvent).count()
+    if total > Config.ALERT_MAX_DB_RECORDS:
+        # 找出第 N 新的記錄的 id（作為刪除邊界）
+        cutoff_row = (
+            db.query(AlertEvent.id)
+            .order_by(AlertEvent.created_at.desc())
+            .offset(Config.ALERT_MAX_DB_RECORDS)
+            .first()
+        )
+        if cutoff_row:
+            old_by_count = (
+                db.query(AlertEvent)
+                .filter(AlertEvent.id <= cutoff_row[0])
+                .delete(synchronize_session=False)
+            )
+            deleted_count += old_by_count
+
+    db.commit()
+    return deleted_count
+
+
+def seed_admin_user(db):
+    """
+    首次啟動時自動建立預設 admin 帳號（若已存在則跳過）。
+    帳號密碼由環境變數 ADMIN_USERNAME / ADMIN_PASSWORD 設定。
+    """
+    from werkzeug.security import generate_password_hash
+
+    username = os.environ.get("ADMIN_USERNAME", "admin")
+    password = os.environ.get("ADMIN_PASSWORD", "admin123")
+    display = os.environ.get("ADMIN_DISPLAY_NAME", "系統管理員")
+
+    existing = db.query(User).filter_by(username=username).first()
+    if not existing:
+        admin = User(
+            username=username,
+            display_name=display,
+            password_hash=generate_password_hash(password),
+            role="admin",
+        )
+        db.add(admin)
+        db.commit()
+        return True   # 新建立
+    return False      # 已存在

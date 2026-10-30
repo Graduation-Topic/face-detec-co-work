@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理後台 — 疲勞偵測系統</title>
+  <link rel="stylesheet" href="/assets/css/global.css" />
+  <link rel="stylesheet" href="/assets/css/dashboard.css" />
+</head>
+<body>
+
+  <!-- ===== 導覽列 ===== -->
+  <nav class="app-nav">
+    <div class="nav-brand">🚗 疲勞偵測系統</div>
+    <div class="nav-links">
+      <a href="/demo" class="nav-link-a">偵測系統</a>
+      <a href="/docs" class="nav-link-a">文件</a>
+      <span id="nav-username" class="nav-user-tag"></span>
+      <button id="btn-logout" class="app-nav-link-button-s-1">登出</button>
+    </div>
+  </nav>
+
+  <!-- ===== 主內容 ===== -->
+  <main class="dashboard-main">
+
+    <!-- 頁面標題 -->
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">管理後台</h1>
+      <p class="dashboard-subtitle">即時監控司機疲勞警告事件</p>
+    </div>
+
+    <!-- 統計卡片列 -->
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="stat-label">視窗內警告次數</div>
+        <div class="stat-value" id="stat-window-count">—</div>
+        <div class="stat-sub" id="stat-window-threshold"></div>
+      </div>
+      <div class="stat-card escalated-card" id="escalation-card">
+        <div class="stat-label">升級通報狀態</div>
+        <div class="stat-value" id="stat-escalated">—</div>
+        <div class="stat-sub" id="stat-escalated-sub"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">資料庫警告總筆數</div>
+        <div class="stat-value" id="stat-total-db">—</div>
+        <div class="stat-sub">（最多保留 <span id="stat-max-records">1000</span> 筆）</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">資料保留天數</div>
+        <div class="stat-value" id="stat-retention">—</div>
+        <div class="stat-sub">超過自動刪除</div>
+      </div>
+    </div>
+
+    <!-- 操作按鈕 -->
+    <div class="action-bar">
+      <button id="btn-refresh" class="btn-primary">🔄 重新整理</button>
+      <button id="btn-reset" class="btn-warning">⚠️ 重置警報視窗</button>
+      <button id="btn-purge" class="btn-danger">🗑️ 清理過期資料</button>
+    </div>
+
+    <!-- 狀態訊息 -->
+    <div id="action-msg" class="action-msg hidden"></div>
+
+    <!-- 近期警告事件表格 -->
+    <section class="table-section">
+      <div class="table-header-row">
+        <h2 class="table-title">近期警告事件</h2>
+        <select id="limit-select" class="limit-select">
+          <option value="20">顯示 20 筆</option>
+          <option value="50" selected>顯示 50 筆</option>
+          <option value="100">顯示 100 筆</option>
+        </select>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="alert-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>時間</th>
+              <th>Session ID</th>
+              <th>原因</th>
+              <th>疲勞分數</th>
+              <th>視窗計數</th>
+              <th>升級通報</th>
+            </tr>
+          </thead>
+          <tbody id="alert-tbody">
+            <tr><td colspan="7" class="loading-row">載入中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // ===== 工具函式 =====
+    const $ = id => document.getElementById(id);
+
+    function showMsg(text, type = 'info') {
+      const el = $('action-msg');
+      el.textContent = text;
+      el.className = `action-msg msg-${type}`;
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => { el.className = 'action-msg hidden'; }, 4000);
+    }
+
+    function formatTime(isoStr) {
+      if (!isoStr) return '—';
+      const d = new Date(isoStr + 'Z');  // UTC → 本地時間
+      return d.toLocaleString('zh-TW', { hour12: false });
+    }
+
+    function shortSession(sid) {
+      if (!sid) return '—';
+      return sid.length > 12 ? sid.slice(0, 12) + '…' : sid;
+    }
+
+    // ===== 載入資料 =====
+    async function loadData() {
+      const limit = $('limit-select').value;
+      try {
+        const res = await fetch(`/api/admin/alerts?limit=${limit}`);
+        if (res.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+        const data = await res.json();
+
+        // 更新統計卡
+        const st = data.status || {};
+        $('stat-window-count').textContent = st.window_count ?? '—';
+        $('stat-window-threshold').textContent =
+          `門檻：${st.trigger_count ?? '—'} 次 / ${Math.round((st.window_sec ?? 300) / 60)} 分鐘`;
+
+        const isEsc = st.is_escalated;
+        $('stat-escalated').textContent = isEsc ? '🚨 已升級' : '✅ 正常';
+        $('escalation-card').classList.toggle('active-escalation', isEsc);
+        $('stat-escalated-sub').textContent =
+          isEsc ? '已超過警告門檻，請關注！' : '目前無異常升級';
+
+        // 從 config 取保留設定
+        try {
+          const cfg = await fetch('/api/config').then(r => r.json());
+          $('stat-retention').textContent = `${cfg.ALERT_RETENTION_DAYS} 天`;
+          $('stat-max-records').textContent = cfg.ALERT_MAX_DB_RECORDS;
+        } catch (_) {}
+
+        // 更新表格
+        const alerts = data.recent_alerts || [];
+        $('stat-total-db').textContent = alerts.length;
+
+        const tbody = $('alert-tbody');
+        if (alerts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="loading-row">目前沒有警告事件紀錄</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = alerts.map((a, i) => `
+          <tr class="${a.is_new_escalation ? 'row-escalated' : ''}">
+            <td>${a.id}</td>
+            <td>${formatTime(a.created_at)}</td>
+            <td title="${a.session_id || ''}">${shortSession(a.session_id)}</td>
+            <td>${a.reason || '—'}</td>
+            <td>${a.score != null ? a.score.toFixed(1) : '—'}</td>
+            <td>${a.window_count ?? '—'}</td>
+            <td class="${a.is_escalated ? 'cell-escalated' : 'cell-normal'}">
+              ${a.is_escalated ? '🚨 是' : '正常'}
+            </td>
+          </tr>
+        `).join('');
+
+      } catch (err) {
+        showMsg('載入失敗：' + err.message, 'error');
+      }
+    }
+
+    // ===== 按鈕事件 =====
+    $('btn-refresh').addEventListener('click', loadData);
+
+    $('limit-select').addEventListener('change', loadData);
+
+    $('btn-reset').addEventListener('click', async () => {
+      if (!confirm('確定要重置警報視窗計數？（資料庫紀錄不會刪除）')) return;
+      const res = await fetch('/api/admin/alerts/reset', { method: 'POST' });
+      if (res.status === 401) { window.location.href = '/login'; return; }
+      const data = await res.json();
+      showMsg(data.message || '已重置', 'info');
+      loadData();
+    });
+
+    $('btn-purge').addEventListener('click', async () => {
+      if (!confirm(`確定要清理過期警告資料？\n超過設定保留天數的記錄將被刪除，此操作無法還原。`)) return;
+      const res = await fetch('/api/admin/alerts/purge', { method: 'POST' });
+      if (res.status === 401) { window.location.href = '/login'; return; }
+      const data = await res.json();
+      showMsg(data.message || '清理完成', data.status === 'success' ? 'success' : 'error');
+      loadData();
+    });
+
+    $('btn-logout').addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/login';
+    });
+
+    // ===== 初始化 =====
+    (async () => {
+      // 驗證登入狀態
+      const me = await fetch('/api/auth/me').then(r => r.json());
+      if (!me.logged_in || me.role !== 'admin') {
+        window.location.href = '/login';
+        return;
+      }
+      $('nav-username').textContent = `👤 ${me.display_name || me.username}`;
+      loadData();
+
+      // 每 30 秒自動刷新
+      setInterval(loadData, 30000);
+    })();
+  </script>
+
+</body>
+</html>

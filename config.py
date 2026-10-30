@@ -120,6 +120,10 @@ class Config:
     ALERT_TRIGGER_COUNT = 3         # 觸發後台通報的警告次數門檻 (預設 3 次)
     ALERT_COOLDOWN_NOTIFY_SEC = 600 # 觸發升級通知後的通報冷卻時間 (秒，預設 600 秒 = 10 分鐘，避免重複轟炸)
 
+    # ========== 資料庫自動清理設定 ==========
+    ALERT_RETENTION_DAYS = 7        # 保留幾天內的警告事件（超過自動刪除）
+    ALERT_MAX_DB_RECORDS = 1000     # 資料庫最多保留幾筆警告事件（超過刪除最舊的）
+
     # 日誌
     LOG_INTERVAL_SEC = 0.2
 
