@@ -5,14 +5,14 @@
   height: auto;
   flex-direction: row;
   justify-content: space-between;
-  gap: 24px;
+  gap: 56px;
   padding: 56px 0 80px;
 }
 
 .docs-sidebar {
-  flex: 0 0 240px;
+  flex: 0 0 200px;
   display: flex;
-  width: 240px;
+  width: 200px;
   max-height: calc(100vh - 100px);
   flex-direction: column;
   align-self: flex-start;
