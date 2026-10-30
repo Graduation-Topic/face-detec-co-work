@@ -2,18 +2,18 @@
 
 ### Create virtual environment.
 
-```python -m venv .venv```
+`python -m venv .venv`
 
-### Actived virtual environment.
+### Active virtual environment.
 
-```Set-ExecutionPolicy RemoteSigned -Scope Process```
+`Set-ExecutionPolicy RemoteSigned -Scope Process`
 
-```.venv\Scripts\activate```
+`.venv\Scripts\activate`
 
 ### Install Dependencies.
 
-```pip install -r requirements.txt```
+`pip install -r requirements.txt`
 
-### Launched the Server.
+### Launch the Server.
 
-```python app.py```
+`python app.py`
