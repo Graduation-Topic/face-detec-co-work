@@ -28,12 +28,24 @@
     <nav class="app-nav">
       <div class="app-nav-inner">
         <div class="nav-lft">
-          <a class="user-select-none cursor-pointer">Docs</a>
-          <a class="user-select-none cursor-pointer" href="/demo">Hub</a>
+          <a
+            class="nav-link-a user-select-none cursor-pointer"
+            href="/docs?doc=intro"
+            >Docs</a
+          >
+          <a
+            class="app-nav-link-button-s-1 user-select-none cursor-pointer"
+            href="/demo"
+            >See the latest demo</a
+          >
         </div>
         <div class="nav-rgt">
           <!-- <a class="user-select-none cursor-pointer" href="/dashboard">Dashboard</a> -->
-          <a class="user-select-none cursor-pointer" href="/login">Sign in</a>
+          <a
+            class="app-nav-link-button-s-1 user-select-none cursor-pointer"
+            href="/login"
+            >Sign in</a
+          >
         </div>
       </div>
     </nav>
@@ -41,7 +53,37 @@
     <main class="app">
       <div class="top-content">
         <div class="app-content">
-          <span class="fix-text">Page under maintenance.</span>
+          <div class="app-banner">Banner Text</div>
+
+          <div class="tech-stack-div">
+            <span class="tech-stack-title user-select-none">Tech Stack</span>
+            <div class="tech-stack-col">
+              <div class="skill-cel cursor-pointer user-select-none">
+                <span>開源機器模型應用框架</span>
+                <p>MediaPipe</p>
+              </div>
+              <div class="skill-cel cursor-pointer user-select-none">
+                <span>影像擷取 </span>
+                <p>Camera API</p>
+              </div>
+              <div class="skill-cel cursor-pointer user-select-none">
+                <span>邊緣運算</span>
+                <p>WebGL、Web Assembly</p>
+              </div>
+              <div class="skill-cel cursor-pointer user-select-none">
+                <span>程式語言</span>
+                <p>JavaScript、Python</p>
+              </div>
+              <div class="skill-cel cursor-pointer user-select-none">
+                <span>雲端部署</span>
+                <p>Render</p>
+              </div>
+              <div class="skill-cel cursor-pointer user-select-none">
+                <span>版本控制</span>
+                <p>GitHub</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -78,8 +120,8 @@
           <div class="footer-site">
             <span>Site</span>
             <div class="footer-site-links">
-              <a href="/docs">Docs</a>
-              <a href="/demo">Hub</a>
+              <a href="/docs?doc=intro">Docs</a>
+              <a href="/demo">Demo</a>
             </div>
           </div>
         </div>

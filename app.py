@@ -60,6 +60,13 @@ def login():
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     return response
 
+@app.route("/docs")
+@app.route("/docs.html")
+def docs():
+    response = app.make_response(render_template("docs.html"))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    return response
+
 
 @app.route("/api/config")
 def api_config():
