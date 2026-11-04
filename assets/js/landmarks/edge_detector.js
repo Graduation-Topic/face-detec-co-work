@@ -89,6 +89,7 @@ function ensureEdge() {
         }
       },
     });
+    window.edgeDetector.start();
 
     if (typeof addSystemLog === "function") {
       addSystemLog("[OK] MediaPipe 模型載入", "success");

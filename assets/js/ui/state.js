@@ -141,6 +141,28 @@ function updateFatigueStatus(level, score) {
   const statusEl = document.getElementById("fatigue-status");
   const scoreEl = document.getElementById("fatigue-score");
 
+  if (window.edgeDetector?.isCalibrating) {
+    if (statusEl) {
+      statusEl.textContent = "校準中...";
+      statusEl.className = "fatigue-status-warning";
+    }
+    if (scoreEl) {
+      scoreEl.textContent = "--";
+    }
+    return;
+  }
+
+  if (!window.edgeDetector?.isDetecting) {
+    if (statusEl) {
+      statusEl.textContent = window.edgeDetector?.isCalibrated ? "已校準 (待命)" : "待命中";
+      statusEl.className = "fatigue-status-safe";
+    }
+    if (scoreEl) {
+      scoreEl.textContent = "--";
+    }
+    return;
+  }
+
   const levelMap = {
     Normal: {
       text: "正常",

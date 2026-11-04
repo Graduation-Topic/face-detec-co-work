@@ -83,33 +83,44 @@ function drawLandmarks(faces) {
   const contentOffsetX = (cssWidth - renderedWidth) / 2;
   const contentOffsetY = (cssHeight - renderedHeight) / 2;
 
+  // 效能優化：批次收集座標，一次性 fill，減少 90% Canvas Draw Calls
+  const normalPoints = [];
+  const posePoints = [];
+
   for (const face of faces || []) {
     for (const [index, point] of face.entries()) {
-      if (
-        !EYE_LANDMARKS.has(index) &&
-        !NOSE_LANDMARKS.has(index) &&
-        !MOUTH_LANDMARKS.has(index)
-      ) {
-        continue;
+      if (NOSE_LANDMARKS.has(index)) {
+        posePoints.push(point);
+      } else if (EYE_LANDMARKS.has(index) || MOUTH_LANDMARKS.has(index)) {
+        normalPoints.push(point);
       }
+    }
+  }
 
+  // 1. 批次畫眼嘴點 (白色)
+  if (normalPoints.length > 0) {
+    landmarkContext.fillStyle = "#ffffff";
+    landmarkContext.beginPath();
+    for (const point of normalPoints) {
       const x = contentOffsetX + point.x * renderedWidth;
       const y = contentOffsetY + point.y * renderedHeight;
-
-      // 鼻尖、額頭、下巴、臉頰等關鍵姿態點畫成亮青色，其餘眼嘴點畫成白色
-      const isPosePoint = NOSE_LANDMARKS.has(index);
-      landmarkContext.fillStyle = isPosePoint ? "#00e5ff" : "#ffffff";
-
-      landmarkContext.beginPath();
-      landmarkContext.arc(
-        x,
-        y,
-        isPosePoint ? 3 : 2, 
-        0,
-        Math.PI * 2,
-      );
-      landmarkContext.fill();
+      landmarkContext.moveTo(x + 2, y);
+      landmarkContext.arc(x, y, 2, 0, Math.PI * 2);
     }
+    landmarkContext.fill();
+  }
+
+  // 2. 批次畫姿態點 (亮青色)
+  if (posePoints.length > 0) {
+    landmarkContext.fillStyle = "#00e5ff";
+    landmarkContext.beginPath();
+    for (const point of posePoints) {
+      const x = contentOffsetX + point.x * renderedWidth;
+      const y = contentOffsetY + point.y * renderedHeight;
+      landmarkContext.moveTo(x + 3, y);
+      landmarkContext.arc(x, y, 3, 0, Math.PI * 2);
+    }
+    landmarkContext.fill();
   }
 }
 

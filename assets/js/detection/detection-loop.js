@@ -34,8 +34,12 @@ function updateEdgeStats(frameStart, elapsedMs) {
   window.edgeStats.latency = Math.round(elapsedMs);
 
   // ====== 呼叫外部的環境檢測模組 (Environment Module) ======
+  // 效能優化：環境測光改為每 10 幀 (約 330ms) 抽樣一次，避免每一幀觸發 GPU getImageData readback stall
   if (typeof window.analyzeEnvironment === "function") {
-    const env = window.analyzeEnvironment(cameraSource);
+    window.__envFrameCounter = (window.__envFrameCounter || 0) + 1;
+    const shouldSample = window.__envFrameCounter % 10 === 0 || !window.__lastEnvResult;
+    const env = shouldSample ? window.analyzeEnvironment(cameraSource) : (window.__lastEnvResult || { brightness: null, highlightRatio: 0 });
+    if (shouldSample) window.__lastEnvResult = env;
     window.edgeStats.brightness = env.brightness;
     window.edgeStats.highlightRatio = env.highlightRatio;
 

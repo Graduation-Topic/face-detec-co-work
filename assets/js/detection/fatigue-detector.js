@@ -35,6 +35,7 @@ export class FatigueDetector {
 
     this.isCalibrating = false;
     this.isCalibrated = false;
+    this.isDetecting = false;
     this.baselineEar = null;
     this.baselineMar = null;
     this.baselineNod = null;
@@ -108,25 +109,38 @@ export class FatigueDetector {
     this.calTurn = [];
     this.startTime = t;
     this.started = true;
+    this.isDetecting = false;
+  }
+
+  startDetecting() {
+    this.isDetecting = true;
+    this.logHistory = [];
+    this.lastLogTime = 0;
+  }
+
+  stopDetecting() {
+    this.isDetecting = false;
   }
 
   /** 對應 /stop_detection */
   stop() {
     if (!this.started) return;
-    this._log(
-      {
-        ear: this.ear,
-        mar: this.mar,
-        leftEar: this.leftEar,
-        rightEar: this.rightEar,
-        nodRatio: this.nodRatio,
-        nodVelocity: this.nodVelocity,
-        turnRatio: this.turnRatio,
-      },
-      "pause",
-      Date.now() / 1000,
-      true,
-    );
+    if (this.isDetecting && !this.isCalibrating) {
+      this._log(
+        {
+          ear: this.ear,
+          mar: this.mar,
+          leftEar: this.leftEar,
+          rightEar: this.rightEar,
+          nodRatio: this.nodRatio,
+          nodVelocity: this.nodVelocity,
+          turnRatio: this.turnRatio,
+        },
+        "pause",
+        Date.now() / 1000,
+        true,
+      );
+    }
     this.started = false;
     this.resetMetrics();
     this.cancelCalibration();
@@ -503,8 +517,13 @@ export class FatigueDetector {
 
       this._updateState(t);
       this._collectCalibration();
-      this._updateFatigue(t);
-      this._checkAlert(t);
+      if (this.isDetecting && !this.isCalibrating) {
+        this._updateFatigue(t);
+        this._checkAlert(t);
+      } else {
+        this.fatigueLevel = "Normal";
+        this.fatigueScore = 0;
+      }
     } else {
       this.faceCount = 0;
       this.leftEar = this.rightEar = this.ear = this.mar = null;
@@ -531,19 +550,21 @@ export class FatigueDetector {
       this._updateFatigue(t);
     }
 
-    this._log(
-      {
-        ear: this.ear,
-        mar: this.mar,
-        leftEar: this.leftEar,
-        rightEar: this.rightEar,
-        nodRatio: this.nodRatio,
-        nodVelocity: this.nodVelocity,
-        turnRatio: this.turnRatio,
-      },
-      "data",
-      Date.now() / 1000,
-    );
+    if (this.isDetecting && !this.isCalibrating) {
+      this._log(
+        {
+          ear: this.ear,
+          mar: this.mar,
+          leftEar: this.leftEar,
+          rightEar: this.rightEar,
+          nodRatio: this.nodRatio,
+          nodVelocity: this.nodVelocity,
+          turnRatio: this.turnRatio,
+        },
+        "data",
+        Date.now() / 1000,
+      );
+    }
     return this.snapshot();
   }
 
