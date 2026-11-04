@@ -110,9 +110,10 @@ class AlertManager:
                 self.is_escalated = True
 
                 # 檢查冷卻時間，避免短時間內連環發送通知
+                last_escalated_time = self.last_escalated_time
                 can_notify = (
-                    self.last_escalated_time is None
-                    or (now - self.last_escalated_time) >= self.notify_cooldown_sec
+                    last_escalated_time is None
+                    or (now - last_escalated_time) >= self.notify_cooldown_sec
                 )
 
                 if can_notify:
@@ -134,12 +135,16 @@ class AlertManager:
                     }
                     self.escalation_history.append(escalation_record)
                     message = (
-                        f"🚨 警告在 {int(self.window_sec)} 秒內累積達 {window_count} 次"
+                        f"警告在 {int(self.window_sec)} 秒內累積達 {window_count} 次"
                         f"（門檻為 {self.trigger_count} 次），已觸發後台通報！"
                     )
                 else:
+                    if last_escalated_time is None:
+                        raise RuntimeError(
+                            "Alert escalation cooldown timestamp is unavailable"
+                        )
                     remaining_cd = int(
-                        self.notify_cooldown_sec - (now - self.last_escalated_time)
+                        self.notify_cooldown_sec - (now - last_escalated_time)
                     )
                     message = (
                         f"⚠️ 警告次數已達標 ({window_count} 次)，"
@@ -196,4 +201,3 @@ class AlertManager:
         with self._lock:
             self.window_alerts.clear()
             self.is_escalated = False
-

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>首頁</title>
 
-    <link rel="stylesheet" href="/assets/css/global.css" defer />
-    <link rel="stylesheet" href="/assets/css/index.css" defer />
+    <link rel="stylesheet" href="/assets/css/global.css" />
+    <link rel="stylesheet" href="/assets/css/index.css" />
 
     <link
       rel="preload"
@@ -22,6 +22,7 @@
       type="font/woff2"
       crossorigin="anonymous"
     />
+    <script src="/assets/js/ui/nav-auth.js" defer></script>
   </head>
 
   <body>
@@ -31,20 +32,12 @@
           <a
             class="nav-link-a user-select-none cursor-pointer"
             href="/docs?doc=intro"
-            >Docs</a
-          >
-          <a
-            class="app-nav-link-button-s-1 user-select-none cursor-pointer"
-            href="/demo"
-            >See the latest demo</a
+            >文件</a
           >
         </div>
         <div class="nav-rgt">
-          <!-- <a class="user-select-none cursor-pointer" href="/dashboard">Dashboard</a> -->
-          <a
-            class="app-nav-link-button-s-1 user-select-none cursor-pointer"
-            href="/login"
-            >Sign in</a
+          <a class="nav-link-a user-select-none cursor-pointer" href="/login"
+            >登入</a
           >
         </div>
       </div>
@@ -53,10 +46,21 @@
     <main class="app">
       <div class="top-content">
         <div class="app-content">
-          <div class="app-banner">Banner Text</div>
+          <div class="app-banner">
+            <div class="app-name-div">舟車勞頓：臉部疲勞動態視覺辨識</div>
+            <span class="app-name-detail"
+              >即時分析眼睛、嘴巴與頭部動作，判斷當下的疲勞狀態。</span
+            >
+            <div class="banner-url">
+              <a href="/demo">
+                <button class="cursor-pointer user-select-none">
+                  體驗測試版
+                </button>
+              </a>
+            </div>
+          </div>
 
           <div class="tech-stack-div">
-            <span class="tech-stack-title user-select-none">Tech Stack</span>
             <div class="tech-stack-col">
               <div class="skill-cel cursor-pointer user-select-none">
                 <span>開源機器模型應用框架</span>
@@ -67,8 +71,11 @@
                 <p>Camera API</p>
               </div>
               <div class="skill-cel cursor-pointer user-select-none">
-                <span>邊緣運算</span>
-                <p>WebGL、Web Assembly</p>
+                <div class="skill-cel-lft">
+                  <span>邊緣運算</span>
+                  <p>WebGL、WASM</p>
+                </div>
+                <div class="skill-cel-rgt"></div>
               </div>
               <div class="skill-cel cursor-pointer user-select-none">
                 <span>程式語言</span>
@@ -120,8 +127,8 @@
           <div class="footer-site">
             <span>Site</span>
             <div class="footer-site-links">
-              <a href="/docs?doc=intro">Docs</a>
-              <a href="/demo">Demo</a>
+              <a href="/docs?doc=intro">文件</a>
+              <a href="/demo">測試版</a>
             </div>
           </div>
         </div>

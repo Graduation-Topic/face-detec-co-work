@@ -9,12 +9,66 @@
 .app-banner {
   display: flex;
   width: 100%;
-  height: 400px;
+  height: auto;
+  flex-direction: column;
+  border-radius: 12px;
+  padding: 90px 0;
+}
+
+.app-name-div {
+  display: flex;
+  width: auto;
+  height: auto;
+  font-family: var(--font-inter);
+  font-size: 32px;
+  color: var(--color-text-primary);
+  padding-bottom: 12px;
+}
+
+.app-name-detail {
+  display: flex;
+  width: auto;
+  height: auto;
+  font-family: var(--font-inter);
+  font-size: 18px;
+  color: var(--color-text-secondary);
+  padding-bottom: 24px;
+}
+
+.banner-url {
+  display: flex;
+  width: auto;
+  height: auto;
+  font-family: var(--font-inter);
+  font-size: 16px;
+  color: var(--color-text-secondary);
+}
+
+.banner-url a {
+  text-decoration: none;
+  color: #fff;
+}
+
+.banner-url a button {
+  display: flex;
+  width: auto;
+  height: auto;
   justify-content: center;
   align-items: center;
-  border-radius: 12px;
-  border: 0.1px solid var(--color-border);
-  color: var(--color-text-primary);
+  text-align: center;
+  border: none;
+  background-color: var(--color-surface-hover);
+  border-radius: 9px;
+  padding: 8px 16px;
+  color: inherit;
+  font-family: var(--font-inter);
+  font-size: 14px;
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.banner-url button:hover {
+  opacity: 0.9;
 }
 
 .tech-stack-div {
@@ -34,22 +88,24 @@
 .tech-stack-col {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 220px);
-  gap: 1px;
-  background-color: var(--color-surface);
+  grid-template-rows: repeat(2, 120px);
   overflow: hidden;
+  gap: 16px;
 }
 
 .skill-cel {
   display: flex;
+  width: 100%;
   flex-direction: column;
   background-color: #000;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
   padding: 24px;
   transition: all 0.25s ease;
 }
 
 .skill-cel:hover {
-  background-color: var(--color-surface);
+  border-color: var(--color-border-hover);
 }
 
 .skill-cel span {
@@ -64,14 +120,13 @@
   font-size: 16px;
   color: var(--color-text-primary);
   font-family: var(--font-inter);
-  line-height: 1;
+  line-height: 1.4;
 }
 
 @media (max-width: 1200px) {
   .tech-stack-col {
     width: 100%;
-    grid-template-columns: repeat(2, auto);
-    grid-template-rows: repeat(3, 160px);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -81,14 +136,15 @@
   }
 
   .app-banner {
-    height: 160px;
+    height: auto;
+    justify-content: center;
+    padding: 60px 0;
   }
 
   .tech-stack-col {
     width: 100%;
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: none;
-    grid-auto-rows: 90px;
+    grid-template-rows: repeat(3, 120px);
   }
 }
 
@@ -96,7 +152,6 @@
   .tech-stack-col {
     width: 100%;
     grid-template-columns: 1fr;
-    grid-template-rows: none;
-    grid-auto-rows: 90px;
+    grid-template-rows: repeat(3, 120px);
   }
 }

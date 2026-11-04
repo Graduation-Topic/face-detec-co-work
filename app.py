@@ -14,13 +14,20 @@ from werkzeug.security import check_password_hash
 
 from alert_manager import AlertManager
 from config import Config
-from database import AlertEvent, User, init_db, purge_old_alerts, seed_admin_user, SessionLocal
+from database import (
+    get_user_by_username,
+    init_db,
+    insert_event,
+    list_recent_alerts,
+    purge_old_alerts,
+)
 from state import State
 
 
 app = Flask(
     __name__,
     static_folder="assets",
+    static_url_path="/assets",
     template_folder="templates",
 )
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
@@ -33,17 +40,8 @@ alert_manager = AlertManager(
     notify_cooldown_sec=Config.ALERT_COOLDOWN_NOTIFY_SEC,
 )
 
-# 啟動時建立資料表（若已存在則跳過），並自動建立預設 admin 帳號
+# 啟動時確認 Supabase 資料表可用
 init_db()
-_boot_db = SessionLocal()
-try:
-    created = seed_admin_user(_boot_db)
-    if created:
-        print("[DB] 預設 admin 帳號已建立")
-    else:
-        print("[DB] admin 帳號已存在，跳過建立")
-finally:
-    _boot_db.close()
 
 
 # ========== 工具函式 ==========
@@ -114,23 +112,19 @@ def api_login():
     if not username or not password:
         return jsonify({"status": "error", "message": "請輸入帳號與密碼"}), 400
 
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter_by(username=username).first()
-        if user and check_password_hash(user.password_hash, password):
-            session.clear()
-            session["user_id"] = user.id
-            session["username"] = user.username
-            session["display_name"] = user.display_name or user.username
-            session["role"] = user.role
-            return jsonify({
-                "status": "ok",
-                "role": user.role,
-                "display_name": user.display_name,
-            })
-        return jsonify({"status": "error", "message": "帳號或密碼錯誤"}), 401
-    finally:
-        db.close()
+    user = get_user_by_username(username)
+    if user and check_password_hash(user.password_hash, password):
+        session.clear()
+        session["user_id"] = user.id
+        session["username"] = user.username
+        session["display_name"] = user.display_name or user.username
+        session["role"] = user.role
+        return jsonify({
+            "status": "ok",
+            "role": user.role,
+            "display_name": user.display_name,
+        })
+    return jsonify({"status": "error", "message": "帳號或密碼錯誤"}), 401
 
 
 @app.route("/api/auth/logout", methods=["POST"])
@@ -268,34 +262,29 @@ def api_record_alert():
     state.recent_alert_count = result["window_count"]
 
     # 3. 寫入資料庫（異常不影響主流程回應）
-    db = None
     try:
-        db = SessionLocal()
-        event = AlertEvent(
-            session_id=session_id,
-            score=score,
-            level=level,
-            reason=reason,
-            client_count=count,
-            window_count=result["window_count"],
-            is_escalated=1 if result["is_escalated"] else 0,
-            is_new_escalation=1 if result["is_new_escalation"] else 0,
-            client_timestamp=timestamp,
+        insert_event(
+            {
+                "session_id": session_id,
+                "score": score,
+                "level": level,
+                "reason": reason,
+                "client_count": count,
+                "window_count": result["window_count"],
+                "is_escalated": 1 if result["is_escalated"] else 0,
+                "is_new_escalation": 1 if result["is_new_escalation"] else 0,
+                "client_timestamp": timestamp,
+            }
         )
-        db.add(event)
-        db.commit()
 
         # 4. 順便清理過期資料（不影響回應時間，偶發失敗可忽略）
         try:
-            purge_old_alerts(db)
+            purge_old_alerts()
         except Exception as purge_err:
             app.logger.warning(f"[DB] purge_old_alerts failed (non-critical): {purge_err}")
 
     except Exception as e:
         app.logger.error(f"[DB] Failed to save alert event: {e}")
-    finally:
-        if db:
-            db.close()
 
     return jsonify(result)
 
@@ -311,19 +300,12 @@ def api_admin_alerts():
 
     # 從資料庫讀取最新警告事件（依時間倒序）
     try:
-        db = SessionLocal()
-        db_events = (
-            db.query(AlertEvent)
-            .order_by(AlertEvent.created_at.desc())
-            .limit(limit)
-            .all()
-        )
-        recent_alerts_from_db = [e.to_dict() for e in db_events]
+        recent_alerts_from_db = [
+            event.to_dict() for event in list_recent_alerts(limit)
+        ]
     except Exception as e:
         app.logger.error(f"[DB] Failed to query alert events: {e}")
         recent_alerts_from_db = []
-    finally:
-        db.close()
 
     return jsonify({
         "status": alert_manager.get_status(),
@@ -357,8 +339,7 @@ def api_admin_alerts_purge():
         return guard
 
     try:
-        db = SessionLocal()
-        deleted = purge_old_alerts(db)
+        deleted = purge_old_alerts()
         return jsonify({
             "status": "success",
             "message": f"已清理 {deleted} 筆過期警告事件",
@@ -367,8 +348,6 @@ def api_admin_alerts_purge():
     except Exception as e:
         app.logger.error(f"[DB] purge failed: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
-    finally:
-        db.close()
 
 
 @app.route("/model/<path:filename>")

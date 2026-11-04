@@ -1,28 +1,27 @@
-/* =============================================
-   login.css — 登入頁樣式
-   完全使用 global.css 的 CSS 變數，與其他頁面保持一致
-   ============================================= */
-
 .auth-content {
   display: flex;
   width: 100%;
   min-height: 500px;
   justify-content: center;
   align-items: center;
-  border: 1px solid var(--color-border);
 }
 
-/* ===== Login Card ===== */
 .login-card {
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 380px;
-  gap: 24px;
+  height: auto;
+  gap: 54px;
   padding: 36px 40px;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
+}
+
+.card-header {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: auto;
+  gap: 4px;
 }
 
 .login-title {
@@ -30,15 +29,12 @@
   font-size: 20px;
   font-weight: bold;
   color: var(--color-text-primary);
-  margin: 0;
 }
 
 .login-subtitle {
   font-family: var(--font-inter);
   font-size: 14px;
   color: var(--color-text-secondary);
-  margin: -16px 0 0;
-  line-height: 1.5;
 }
 
 /* ===== Form ===== */
@@ -65,7 +61,7 @@
 .form-input {
   background-color: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-radius: var(--button-border-radius-6px);
+  border-radius: var(--button-border-radius-9px);
   padding: 10px 12px;
   color: var(--color-text-primary);
   font-family: var(--font-inter);
@@ -83,48 +79,47 @@
   color: var(--color-text-muted);
 }
 
-/* ===== Error message ===== */
 .login-error {
   font-family: var(--font-inter);
   font-size: 13px;
   color: var(--color-danger);
   background-color: rgba(255, 77, 77, 0.08);
   border: 1px solid rgba(255, 77, 77, 0.3);
-  border-radius: var(--button-border-radius-6px);
+  border-radius: var(--button-border-radius-9px);
   padding: 10px 12px;
 }
 
-/* ===== Submit button ===== */
 .btn-login {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 10px 16px;
-  background-color: var(--color-accent);
-  color: #fff;
+  padding: 16px;
+  background-color: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
   font-family: var(--font-inter);
-  font-size: 14px;
-  font-weight: bold;
-  border: none;
-  border-radius: var(--button-border-radius-6px);
-  cursor: pointer;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: var(--button-border-radius-9px);
+  transition: all 0.25s ease;
   margin-top: 4px;
 }
 
-.btn-login:hover:not(:disabled) {
-  background-color: var(--color-accent-hover);
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: btn-spinner-spin 0.7s linear infinite;
 }
 
-.btn-login:active:not(:disabled) {
-  transform: scale(0.985);
-}
-
-.btn-login:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+@keyframes btn-spinner-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 700px) {

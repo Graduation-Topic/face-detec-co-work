@@ -152,7 +152,7 @@ window.handleAlertEvent = async function handleAlertEvent(alertInfo) {
       const windowMin = Math.round((result.window_sec || 300) / 60);
       if (typeof addSystemLog === "function") {
         addSystemLog(
-          `🚨 [後台通報] 警告已在 ${windowMin} 分鐘內累積達 ${result.window_count} 次，已通報後台管理者！`,
+          `[後台通報] 警告已在 ${windowMin} 分鐘內累積達 ${result.window_count} 次，已通報後台管理者！`,
           "error",
         );
       }

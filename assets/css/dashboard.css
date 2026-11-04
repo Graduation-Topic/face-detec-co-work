@@ -91,7 +91,6 @@
   color: var(--color-text-muted);
 }
 
-/* ===== 操作按鈕列 ===== */
 .action-bar {
   display: flex;
   gap: 8px;
@@ -101,6 +100,7 @@
 .dash-btn {
   display: flex;
   align-items: center;
+
   gap: 6px;
   padding: 6px 14px;
   font-family: var(--font-inter);
@@ -109,7 +109,9 @@
   border-radius: var(--button-border-radius-6px);
   border: 1px solid var(--color-border);
   cursor: pointer;
-  transition: background-color 0.15s ease, opacity 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    opacity 0.15s ease;
   user-select: none;
 }
 
@@ -146,7 +148,6 @@
   background-color: rgba(255, 77, 77, 0.2);
 }
 
-/* ===== 訊息列 ===== */
 .dash-msg {
   font-family: var(--font-inter);
   font-size: 13px;
@@ -173,7 +174,6 @@
   border-color: rgba(255, 77, 77, 0.3);
 }
 
-/* ===== 表格面板 ===== */
 .table-panel {
   display: flex;
   flex-direction: column;
@@ -285,7 +285,9 @@
 }
 
 @media (max-width: 700px) {
-  .dash-title { font-size: 20px; }
+  .dash-title {
+    font-size: 20px;
+  }
 
   .stat-cards {
     grid-template-columns: 1fr 1fr;

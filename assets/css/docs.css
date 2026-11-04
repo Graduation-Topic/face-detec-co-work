@@ -19,7 +19,6 @@
   position: sticky;
   top: 90px;
   overflow-y: auto;
-  gap: 8px;
   z-index: 1;
 }
 
@@ -44,12 +43,12 @@
 }
 
 .doc-bookmark a {
-  padding: 8px 12px;
+  padding: 6px 12px;
   text-decoration: none;
   font-family: var(--font-inter);
   font-size: 14px;
   color: var(--color-text-primary);
-  border-radius: var(--button-border-radius-9px);
+  border-radius: var(--button-border-radius-6px);
 }
 
 .doc-bookmark a:hover {
