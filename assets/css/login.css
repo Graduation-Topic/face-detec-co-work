@@ -1,3 +1,8 @@
+/* =============================================
+   login.css — 登入頁樣式
+   完全使用 global.css 的 CSS 變數，與其他頁面保持一致
+   ============================================= */
+
 .auth-content {
   display: flex;
   width: 100%;
@@ -7,114 +12,123 @@
   border: 1px solid var(--color-border);
 }
 
-.auth-content span {
-  display: flex;
-  width: auto;
-  height: auto;
-  justify-content: center;
-  align-items: center;
-  font-family: var(--font-mono);
-  color: var(--color-text-primary);
-}
-
 /* ===== Login Card ===== */
 .login-card {
-  background: #141414;
-  border: 1px solid #2a2a2a;
-  border-radius: 16px;
-  padding: 40px 44px;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  max-width: 380px;
+  gap: 24px;
+  padding: 36px 40px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
 }
 
 .login-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin: 0 0 6px;
-  color: #e8e8e8;
+  font-family: var(--font-inter);
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--color-text-primary);
+  margin: 0;
 }
 
 .login-subtitle {
-  font-size: 0.875rem;
-  color: #777;
-  margin: 0 0 28px;
+  font-family: var(--font-inter);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: -16px 0 0;
+  line-height: 1.5;
 }
 
+/* ===== Form ===== */
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.form-group label {
-  font-size: 0.82rem;
-  color: #aaa;
-  font-weight: 500;
-}
-
-.form-input {
-  background: #0f0f0f;
-  border: 1px solid #333;
-  border-radius: 8px;
-  padding: 12px 14px;
-  color: #e8e8e8;
-  font-size: 0.95rem;
-  outline: none;
-  transition: border-color 0.2s;
-  font-family: inherit;
-}
-
-.form-input:focus {
-  border-color: #4f8ef7;
-}
-
-.login-error {
-  background: rgba(224,85,85,0.12);
-  border: 1px solid #e05555;
-  color: #e05555;
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 0.85rem;
-}
-
-.login-error.hidden {
-  display: none;
-}
-
-.btn-login {
-  background: #4f8ef7;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 13px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 8px;
 }
 
+.form-group label {
+  font-family: var(--font-inter);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--color-text-secondary);
+  user-select: none;
+}
+
+.form-input {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--button-border-radius-6px);
+  padding: 10px 12px;
+  color: var(--color-text-primary);
+  font-family: var(--font-inter);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  width: 100%;
+}
+
+.form-input:focus {
+  border-color: var(--color-border-focus);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* ===== Error message ===== */
+.login-error {
+  font-family: var(--font-inter);
+  font-size: 13px;
+  color: var(--color-danger);
+  background-color: rgba(255, 77, 77, 0.08);
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  border-radius: var(--button-border-radius-6px);
+  padding: 10px 12px;
+}
+
+/* ===== Submit button ===== */
+.btn-login {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  background-color: var(--color-accent);
+  color: #fff;
+  font-family: var(--font-inter);
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: var(--button-border-radius-6px);
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  margin-top: 4px;
+}
+
 .btn-login:hover:not(:disabled) {
-  opacity: 0.88;
-  transform: translateY(-1px);
+  background-color: var(--color-accent-hover);
+}
+
+.btn-login:active:not(:disabled) {
+  transform: scale(0.985);
 }
 
 .btn-login:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.hidden {
-  display: none !important;
+@media (max-width: 700px) {
+  .login-card {
+    padding: 28px 24px;
+  }
 }
