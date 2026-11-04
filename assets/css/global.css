@@ -91,10 +91,6 @@
   opacity: 0.9;
 }
 
-/* =========================================
-   App
-   ========================================= */
-
 body {
   display: flex;
   width: 100%;
@@ -103,18 +99,16 @@ body {
   flex-direction: column;
   background-color: var(--color-bg);
   overflow-x: hidden;
-  gap: 12px;
 }
 
 .app {
   display: flex;
   width: 100%;
-  min-height: auto;
+  height: auto;
   flex-direction: column;
   align-items: center;
   margin: 0 auto;
-  padding: 0 16px;
-  gap: 12px;
+  padding-left: 12px;
 }
 
 .top-content {
@@ -124,11 +118,8 @@ body {
   height: auto;
   justify-content: center;
   gap: 16px;
+  margin-top: 16px;
 }
-
-/* =========================================
-   Navigation
-   ========================================= */
 
 .app-nav {
   display: flex;
@@ -354,6 +345,7 @@ body {
 @media (max-width: 1200px) {
   .app {
     gap: 8px;
+    padding: 0 12px;
   }
 
   .top-content {

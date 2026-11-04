@@ -1,6 +1,5 @@
 .docs-content {
   display: flex;
-  max-width: 1200px;
   width: 100%;
   height: auto;
   flex-direction: row;
@@ -49,6 +48,10 @@
   font-size: 14px;
   color: var(--color-text-primary);
   border-radius: var(--button-border-radius-6px);
+}
+
+.doc-bookmark a.active {
+  background-color: var(--color-surface-raised);
 }
 
 .doc-bookmark a:hover {

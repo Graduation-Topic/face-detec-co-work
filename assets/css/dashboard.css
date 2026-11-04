@@ -1,18 +1,109 @@
-/* =============================================
-   dashboard.css — 管理後台樣式
-   完全使用 global.css 的 CSS 變數，與其他頁面保持一致
-   ============================================= */
+.dash-nav-inner {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  padding: 0 16px;
+  gap: 60px;
+}
 
-/* ===== Dashboard 主容器 ===== */
 .dash-content {
   display: flex;
   width: 100%;
-  min-height: 500px;
+  height: calc(100vh - var(--nav-height));
+  min-height: calc(100vh - var(--nav-height));
+  flex-direction: row;
+  gap: 48px;
+  overflow: visible;
+}
+
+.dash-top {
+  display: flex;
+  width: 100%;
+  height: auto;
+  flex-direction: row;
+  padding-bottom: 90px;
+}
+
+.dash-btm {
+  display: flex;
+  width: 100%;
+  height: auto;
   flex-direction: column;
   gap: 24px;
 }
 
-/* ===== 頁面標題 ===== */
+.dash-sidebar {
+  display: flex;
+  flex: 0 0 auto;
+  width: 280px;
+  height: 100%;
+  padding: 12px;
+  border-right: 1px solid var(--color-border);
+}
+
+.dash-bookmark {
+  display: flex;
+  width: 100%;
+  height: auto;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-bookmark a {
+  display: flex;
+  width: 100%;
+  height: auto;
+  padding: 8px 12px;
+  text-decoration: none;
+  font-family: var(--font-inter);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  border-radius: var(--button-border-radius-6px);
+}
+
+.dash-bookmark a:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.dash-bookmark a.active {
+  background-color: var(--color-button-bg-hover);
+}
+
+.dash-rgt {
+  display: flex;
+  flex: 1 1 auto;
+  width: 100%;
+  height: auto;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-color: #666 var(--color-bg);
+  scrollbar-width: auto;
+}
+
+.dash-rgt::-webkit-scrollbar-track {
+  background-color: var(--color-bg);
+}
+
+.dash-rgt::-webkit-scrollbar-thumb {
+  background-color: #666;
+}
+
+.dash-overview {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: auto;
+  flex-direction: column;
+  gap: 24px;
+  overflow: visible;
+}
+
+.dash-overview > * {
+  flex-shrink: 0;
+}
+
 .dash-header {
   display: flex;
   flex-direction: column;
@@ -35,14 +126,12 @@
   margin: 0;
 }
 
-/* ===== 統計卡片 ===== */
 .stat-cards {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1px;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -100,13 +189,11 @@
 .dash-btn {
   display: flex;
   align-items: center;
-
   gap: 6px;
   padding: 6px 14px;
   font-family: var(--font-inter);
   font-size: 13px;
   font-weight: bold;
-  border-radius: var(--button-border-radius-6px);
   border: 1px solid var(--color-border);
   cursor: pointer;
   transition:
@@ -178,7 +265,6 @@
   display: flex;
   flex-direction: column;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -186,7 +272,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
+  padding: 8px 8px 8px 20px;
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-surface);
 }
@@ -199,17 +285,46 @@
   user-select: none;
 }
 
+.limit-select-wrap {
+  position: relative;
+  min-width: 108px;
+}
+
 .limit-select {
-  background-color: var(--color-button-bg);
+  appearance: none;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 30px 6px 10px;
+  background-color: var(--color-surface);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
-  border-radius: var(--button-border-radius-6px);
-  padding: 4px 10px;
   font-family: var(--font-inter);
   font-size: 12px;
   font-weight: bold;
   cursor: pointer;
   outline: none;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.limit-chevron {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.limit-select:hover {
+  background-color: var(--color-button-bg-hover);
+}
+
+.limit-select option {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
 }
 
 .table-wrapper {
@@ -256,6 +371,15 @@
   vertical-align: middle;
 }
 
+.alert-table th:nth-child(2),
+.alert-table td:nth-child(2) {
+  width: 150px;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .table-empty {
   text-align: center;
   color: var(--color-text-muted) !important;
@@ -277,29 +401,67 @@
   color: var(--color-success);
 }
 
-/* ===== Responsive ===== */
 @media (max-width: 1200px) {
   .stat-cards {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 700px) {
-  .dash-title {
-    font-size: 20px;
+@media (min-width: 801px) and (max-width: 1200px) {
+  .table-wrapper {
+    overflow-x: auto;
   }
 
-  .stat-cards {
-    grid-template-columns: 1fr 1fr;
+  .alert-table {
+    min-width: 900px;
+  }
+}
+
+@media (max-width: 800px) {
+  .dash-content {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .dash-top {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .dash-sidebar {
+    width: 100%;
+    height: auto;
+    border: none;
+  }
+
+  .dash-rgt {
+    height: auto;
+    overflow-y: visible;
+  }
+
+  .dash-title {
+    font-size: 20px;
   }
 
   .action-bar {
     flex-direction: column;
   }
-}
 
-@media (max-width: 480px) {
   .stat-cards {
     grid-template-columns: 1fr;
+  }
+
+  .table-panel-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .limit-select {
+    width: 100%;
+  }
+
+  .limit-select-wrap {
+    width: 100%;
   }
 }
