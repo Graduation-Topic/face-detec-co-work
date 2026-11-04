@@ -9,8 +9,8 @@
 .dash-content {
   display: flex;
   width: 100%;
-  height: calc(100vh - var(--nav-height));
   min-height: calc(100vh - var(--nav-height));
+  height: auto;
   flex-direction: row;
   gap: 48px;
   overflow: visible;
@@ -431,12 +431,15 @@
   .dash-sidebar {
     width: 100%;
     height: auto;
-    border: none;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    padding: 12px 0;
   }
 
   .dash-rgt {
     height: auto;
     overflow-y: visible;
+    padding: 0;
   }
 
   .dash-title {
