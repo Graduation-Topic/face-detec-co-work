@@ -35,6 +35,7 @@ export class FatigueDetector {
 
     this.isCalibrating = false;
     this.isCalibrated = false;
+    this.isDetecting = false;
     this.baselineEar = null;
     this.baselineMar = null;
     this.baselineNod = null;
@@ -108,25 +109,38 @@ export class FatigueDetector {
     this.calTurn = [];
     this.startTime = t;
     this.started = true;
+    this.isDetecting = false;
+  }
+
+  startDetecting() {
+    this.isDetecting = true;
+    this.logHistory = [];
+    this.lastLogTime = 0;
+  }
+
+  stopDetecting() {
+    this.isDetecting = false;
   }
 
   /** 對應 /stop_detection */
   stop() {
     if (!this.started) return;
-    this._log(
-      {
-        ear: this.ear,
-        mar: this.mar,
-        leftEar: this.leftEar,
-        rightEar: this.rightEar,
-        nodRatio: this.nodRatio,
-        nodVelocity: this.nodVelocity,
-        turnRatio: this.turnRatio,
-      },
-      "pause",
-      Date.now() / 1000,
-      true,
-    );
+    if (this.isDetecting && !this.isCalibrating) {
+      this._log(
+        {
+          ear: this.ear,
+          mar: this.mar,
+          leftEar: this.leftEar,
+          rightEar: this.rightEar,
+          nodRatio: this.nodRatio,
+          nodVelocity: this.nodVelocity,
+          turnRatio: this.turnRatio,
+        },
+        "pause",
+        Date.now() / 1000,
+        true,
+      );
+    }
     this.started = false;
     this.resetMetrics();
     this.cancelCalibration();
@@ -449,11 +463,30 @@ export class FatigueDetector {
     this.lastAlertTime = t;
     this.alertCount += 1;
     this.beepPending = true;
+    let reason = "疲勞指數過高 (Severe Fatigue)";
+    const microsleepDur = this.cfg.MICROSLEEP_MIN_DURATION ?? 1.5;
+    const nodMinDur = this.cfg.NOD_MIN_DURATION ?? 1.5;
+
+    if (this.eyeClosureDur >= microsleepDur) {
+      reason = "微睡眠 (Microsleep)";
+    } else if (this.isSnapNodding) {
+      reason = "打瞌睡瞬間點頭 (Head Snap)";
+    } else if (this.nodDur >= nodMinDur) {
+      reason = "持續低頭 (Deep Nodding)";
+    } else if (this.perclos >= (this.cfg.PERCLOS_SEVERE_RATIO ?? 0.4)) {
+      reason = "長時間閉眼 (High PERCLOS)";
+    } else if (
+      this.yawnTimestamps.length >= (this.cfg.YAWN_RATE_SEVERE_PER_MIN ?? 3)
+    ) {
+      reason = "頻繁打哈欠 (Frequent Yawning)";
+    }
+
     if (this.onAlert)
       this.onAlert({
         score: this.fatigueScore,
         level: this.fatigueLevel,
         count: this.alertCount,
+        reason,
       });
   }
 
@@ -484,8 +517,13 @@ export class FatigueDetector {
 
       this._updateState(t);
       this._collectCalibration();
-      this._updateFatigue(t);
-      this._checkAlert(t);
+      if (this.isDetecting && !this.isCalibrating) {
+        this._updateFatigue(t);
+        this._checkAlert(t);
+      } else {
+        this.fatigueLevel = "Normal";
+        this.fatigueScore = 0;
+      }
     } else {
       this.faceCount = 0;
       this.leftEar = this.rightEar = this.ear = this.mar = null;
@@ -512,19 +550,21 @@ export class FatigueDetector {
       this._updateFatigue(t);
     }
 
-    this._log(
-      {
-        ear: this.ear,
-        mar: this.mar,
-        leftEar: this.leftEar,
-        rightEar: this.rightEar,
-        nodRatio: this.nodRatio,
-        nodVelocity: this.nodVelocity,
-        turnRatio: this.turnRatio,
-      },
-      "data",
-      Date.now() / 1000,
-    );
+    if (this.isDetecting && !this.isCalibrating) {
+      this._log(
+        {
+          ear: this.ear,
+          mar: this.mar,
+          leftEar: this.leftEar,
+          rightEar: this.rightEar,
+          nodRatio: this.nodRatio,
+          nodVelocity: this.nodVelocity,
+          turnRatio: this.turnRatio,
+        },
+        "data",
+        Date.now() / 1000,
+      );
+    }
     return this.snapshot();
   }
 

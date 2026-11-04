@@ -1,0 +1,303 @@
+/* =============================================
+   dashboard.css — 管理後台樣式
+   完全使用 global.css 的 CSS 變數，與其他頁面保持一致
+   ============================================= */
+
+/* ===== Dashboard 主容器 ===== */
+.dash-content {
+  display: flex;
+  width: 100%;
+  min-height: 500px;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ===== 頁面標題 ===== */
+.dash-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.dash-title {
+  font-family: var(--font-inter);
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.dash-subtitle {
+  font-family: var(--font-inter);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ===== 統計卡片 ===== */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 22px;
+  background-color: var(--color-bg);
+  transition: background-color 0.2s ease;
+}
+
+.stat-card:hover {
+  background-color: var(--color-surface);
+}
+
+.stat-card-escalated {
+  background-color: rgba(255, 77, 77, 0.06) !important;
+}
+
+.stat-label {
+  font-family: var(--font-inter);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.stat-value {
+  font-family: var(--font-inter);
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.stat-card-escalated .stat-value {
+  color: var(--color-danger);
+}
+
+.stat-sub {
+  font-family: var(--font-inter);
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ===== 操作按鈕列 ===== */
+.action-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dash-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-family: var(--font-inter);
+  font-size: 13px;
+  font-weight: bold;
+  border-radius: var(--button-border-radius-6px);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+  user-select: none;
+}
+
+.dash-btn:active {
+  transform: scale(0.985);
+}
+
+.dash-btn-default {
+  background-color: var(--color-button-bg);
+  color: var(--color-text-primary);
+}
+
+.dash-btn-default:hover {
+  background-color: var(--color-button-bg-hover);
+}
+
+.dash-btn-warning {
+  background-color: rgba(255, 184, 77, 0.12);
+  color: var(--color-warning);
+  border-color: rgba(255, 184, 77, 0.3);
+}
+
+.dash-btn-warning:hover {
+  background-color: rgba(255, 184, 77, 0.2);
+}
+
+.dash-btn-danger {
+  background-color: rgba(255, 77, 77, 0.12);
+  color: var(--color-danger);
+  border-color: rgba(255, 77, 77, 0.3);
+}
+
+.dash-btn-danger:hover {
+  background-color: rgba(255, 77, 77, 0.2);
+}
+
+/* ===== 訊息列 ===== */
+.dash-msg {
+  font-family: var(--font-inter);
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: var(--button-border-radius-6px);
+  border: 1px solid;
+}
+
+.dash-msg-info {
+  color: var(--color-accent);
+  background-color: rgba(0, 122, 255, 0.08);
+  border-color: rgba(0, 122, 255, 0.3);
+}
+
+.dash-msg-success {
+  color: var(--color-success);
+  background-color: rgba(76, 217, 100, 0.08);
+  border-color: rgba(76, 217, 100, 0.3);
+}
+
+.dash-msg-error {
+  color: var(--color-danger);
+  background-color: rgba(255, 77, 77, 0.08);
+  border-color: rgba(255, 77, 77, 0.3);
+}
+
+/* ===== 表格面板 ===== */
+.table-panel {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.table-panel-title {
+  font-family: var(--font-inter);
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--color-text-primary);
+  user-select: none;
+}
+
+.limit-select {
+  background-color: var(--color-button-bg);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--button-border-radius-6px);
+  padding: 4px 10px;
+  font-family: var(--font-inter);
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  outline: none;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.alert-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.alert-table thead th {
+  background-color: var(--color-surface);
+  color: var(--color-text-muted);
+  font-family: var(--font-inter);
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  user-select: none;
+}
+
+.alert-table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.1s ease;
+}
+
+.alert-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.alert-table tbody tr:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.alert-table tbody td {
+  font-family: var(--font-inter);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  padding: 11px 16px;
+  vertical-align: middle;
+}
+
+.table-empty {
+  text-align: center;
+  color: var(--color-text-muted) !important;
+  padding: 48px !important;
+  font-family: var(--font-inter);
+  font-size: 14px;
+}
+
+.row-escalated {
+  background-color: rgba(255, 77, 77, 0.04);
+}
+
+.cell-danger {
+  color: var(--color-danger);
+  font-weight: bold;
+}
+
+.cell-ok {
+  color: var(--color-success);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1200px) {
+  .stat-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .dash-title { font-size: 20px; }
+
+  .stat-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .action-bar {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-cards {
+    grid-template-columns: 1fr;
+  }
+}

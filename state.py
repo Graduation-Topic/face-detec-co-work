@@ -75,6 +75,8 @@ class State:
         self.alert_count = 0
         self.is_alert_active = False
         self.alert_history = []
+        self.escalated_alert = False
+        self.recent_alert_count = 0
 
         # Calibration
         self.is_calibrating = False
@@ -126,6 +128,9 @@ class State:
         self.is_calibrating = False
         self.calibration_ear_samples = []
         self.calibration_mar_samples = []
+
+        self.escalated_alert = False
+        self.recent_alert_count = 0
 
         self.start_record_time = time.time()
 
@@ -198,4 +203,6 @@ class State:
             "ear_threshold": self.ear_threshold,
             "mar_threshold": self.mar_threshold,
             "nod_threshold": self.nod_threshold,
+            "escalated_alert": self.escalated_alert,
+            "recent_alert_count": self.recent_alert_count,
         }

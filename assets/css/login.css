@@ -1,3 +1,8 @@
+/* =============================================
+   login.css — 登入頁樣式
+   完全使用 global.css 的 CSS 變數，與其他頁面保持一致
+   ============================================= */
+
 .auth-content {
   display: flex;
   width: 100%;
@@ -7,12 +12,123 @@
   border: 1px solid var(--color-border);
 }
 
-.auth-content span {
+/* ===== Login Card ===== */
+.login-card {
   display: flex;
-  width: auto;
-  height: auto;
+  flex-direction: column;
+  width: 100%;
+  max-width: 380px;
+  gap: 24px;
+  padding: 36px 40px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.login-title {
+  font-family: var(--font-inter);
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.login-subtitle {
+  font-family: var(--font-inter);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: -16px 0 0;
+  line-height: 1.5;
+}
+
+/* ===== Form ===== */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-family: var(--font-inter);
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--color-text-secondary);
+  user-select: none;
+}
+
+.form-input {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--button-border-radius-6px);
+  padding: 10px 12px;
+  color: var(--color-text-primary);
+  font-family: var(--font-inter);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  width: 100%;
+}
+
+.form-input:focus {
+  border-color: var(--color-border-focus);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* ===== Error message ===== */
+.login-error {
+  font-family: var(--font-inter);
+  font-size: 13px;
+  color: var(--color-danger);
+  background-color: rgba(255, 77, 77, 0.08);
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  border-radius: var(--button-border-radius-6px);
+  padding: 10px 12px;
+}
+
+/* ===== Submit button ===== */
+.btn-login {
+  display: flex;
   justify-content: center;
   align-items: center;
-  font-family: var(--font-mono);
-  color: var(--color-text-primary);
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  background-color: var(--color-accent);
+  color: #fff;
+  font-family: var(--font-inter);
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: var(--button-border-radius-6px);
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  margin-top: 4px;
+}
+
+.btn-login:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+}
+
+.btn-login:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.btn-login:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .login-card {
+    padding: 28px 24px;
+  }
 }

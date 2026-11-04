@@ -67,7 +67,11 @@ async function waitForVideoMetadata() {
 
 async function openCameraStream() {
   cameraStream = await navigator.mediaDevices.getUserMedia({
-    video: true,
+    video: {
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+      frameRate: { ideal: 30, max: 30 },
+    },
     audio: false,
   });
 
@@ -243,10 +247,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  startBrowserPreview()
+  startBrowserCamera()
     .then(() => {
       if (typeof addSystemLog === "function") {
-        addSystemLog("[OK] 鏡頭預覽", "success");
+        addSystemLog("[OK] 鏡頭與特徵即時預覽就緒", "success");
       }
     })
     .catch((error) => {

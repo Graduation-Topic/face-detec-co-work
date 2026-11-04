@@ -83,7 +83,13 @@ function ensureEdge() {
 
     window.edgeDetector = new detectorModule.FatigueDetector({
       config,
+      onAlert: (alertInfo) => {
+        if (typeof window.handleAlertEvent === "function") {
+          window.handleAlertEvent(alertInfo);
+        }
+      },
     });
+    window.edgeDetector.start();
 
     if (typeof addSystemLog === "function") {
       addSystemLog("[OK] MediaPipe 模型載入", "success");
