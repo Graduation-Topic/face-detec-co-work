@@ -36,11 +36,13 @@
   display: flex;
   flex: 0 0 auto;
   width: 280px;
-  height: 100%;
+  height: calc(100vh - var(--nav-height) + 1px);
   position: sticky;
-  top: calc(var(--nav-height) + 1px);
+  top: calc(var(--nav-height));
   padding: 12px;
   border-right: 1px solid var(--color-border);
+  background-color: var(--color-bg);
+  z-index: 1;
 }
 
 .dash-bookmark {
@@ -49,6 +51,7 @@
   height: auto;
   flex-direction: column;
   gap: 4px;
+  background-color: var(--color-bg);
 }
 
 .dash-bookmark a {
