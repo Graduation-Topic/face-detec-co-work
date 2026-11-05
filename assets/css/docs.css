@@ -75,6 +75,7 @@
   height: 100%;
   flex-direction: column;
   gap: 48px;
+  overflow-y: auto;
 }
 
 .doc-layout img {

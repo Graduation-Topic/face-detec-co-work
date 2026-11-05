@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>管理後台</title>
+    <title>後台</title>
 
     <link rel="stylesheet" href="/assets/css/global.css" />
     <link rel="stylesheet" href="/assets/css/dashboard.css" />
@@ -24,6 +24,7 @@
     />
 
     <script src="/assets/js/ds-table/table.js" defer></script>
+    <script src="/assets/js/ui/dashboard-page-switch.js" defer></script>
   </head>
 
   <body>
@@ -59,18 +60,28 @@
         <div class="dash-sidebar">
           <div class="dash-bookmark">
             <a
-              href="/dashboard.html/overview"
-              class="active"
-              data-dash="overview"
+              href="/dashboard/overview"
+              class="user-select-none active"
+              dash-page="overview"
               >總覽</a
             >
-            <a href="/dashboard.html/users" data-dash="users">管理</a>
-            <a href="/dashboard.html/setting" data-dash="setting">設定</a>
+            <a
+              href="/dashboard/manage"
+              class="user-select-none"
+              dash-page="manage"
+              >管理</a
+            >
+            <a
+              href="/dashboard/setting"
+              class="user-select-none"
+              dash-page="settings"
+              >設定</a
+            >
           </div>
         </div>
         <div class="dash-rgt">
           <div class="dash-top">
-            <div class="dash-overview">
+            <section class="dash-main" dash-page="overview">
               <div class="dash-header">
                 <h1 class="dash-title">後台</h1>
                 <p class="dash-subtitle">即時監控司機疲勞警告事件</p>
@@ -126,7 +137,10 @@
                 <div class="table-panel-header">
                   <span class="table-panel-title">近期警告事件</span>
                   <div class="limit-select-wrap">
-                    <select id="limit-select" class="limit-select">
+                    <select
+                      id="limit-select"
+                      class="limit-select user-select-none"
+                    >
                       <option value="20">顯示 20 筆</option>
                       <option value="50" selected>顯示 50 筆</option>
                       <option value="100">顯示 100 筆</option>
@@ -172,7 +186,106 @@
                   </table>
                 </div>
               </div>
-            </div>
+            </section>
+            <section class="dash-main" dash-page="manage" hidden>
+              <div class="dash-header">
+                <h1 class="dash-title">員工管理</h1>
+              </div>
+
+              <div class="manage-stat">
+                <div class="manage-stat-i user-select-none">
+                  <div class="manage-i-ico">
+                    <svg
+                      width="100%"
+                      height="100%"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M22 21V19C22 17.1362 20.7252 15.5701 19 15.126M15.5 3.29076C16.9659 3.88415 18 5.32131 18 7C18 8.67869 16.9659 10.1159 15.5 10.7092M17 21C17 19.1362 17 18.2044 16.6955 17.4693C16.2895 16.4892 15.5108 15.7105 14.5307 15.3045C13.7956 15 12.8638 15 11 15H8C6.13623 15 5.20435 15 4.46927 15.3045C3.48915 15.7105 2.71046 16.4892 2.30448 17.4693C2 18.2044 2 19.1362 2 21M13.5 7C13.5 9.20914 11.7091 11 9.5 11C7.29086 11 5.5 9.20914 5.5 7C5.5 4.79086 7.29086 3 9.5 3C11.7091 3 13.5 4.79086 13.5 7Z"
+                        stroke="#ffffff"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <div class="manage-i-detail">
+                    <span class="manage-i-key">員工總數</span>
+                    <span class="manage-i-value" id="manage-total">0</span>
+                  </div>
+                </div>
+                <div class="manage-stat-i user-select-none">
+                  <div class="manage-i-ico">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="100%"
+                      height="100%"
+                      fill="none"
+                      stroke="#ffffff"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="4" ry="4" />
+                      <path d="M7 14.5l3.5-3.5 3 3 3.5-4" />
+                    </svg>
+                  </div>
+                  <div class="manage-i-detail">
+                    <span class="manage-i-key">檢測中</span>
+                    <span class="manage-i-value" id="manage-on-detec">0</span>
+                  </div>
+                </div>
+                <div class="manage-stat-i user-select-none">
+                  <div class="manage-i-ico">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      width="100%"
+                      height="100%"
+                      fill="none"
+                      stroke="#ffffff"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                      <line x1="10" y1="9.5" x2="10" y2="14.5" />
+                      <line x1="14" y1="9.5" x2="14" y2="14.5" />
+                    </svg>
+                  </div>
+                  <div class="manage-i-detail">
+                    <span class="manage-i-key">未啟用</span>
+                    <span class="manage-i-value" id="manage-not-detec">0</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dash-manage-board">
+                <div class="manage-board-header">
+                  <input
+                    type="text"
+                    id="search-user"
+                    class="search-user"
+                    placeholder="搜尋員工名稱或 ID"
+                  />
+                  <button
+                    class="user-select-none cursor-pointer"
+                    id="manage-add-employee"
+                  >
+                    新增員工
+                  </button>
+                </div>
+                <div class="manage-viewer"></div>
+              </div>
+            </section>
+            <section class="dash-main" dash-page="settings" hidden>
+              <div class="dash-header">
+                <h1 class="dash-title">設定</h1>
+              </div>
+            </section>
           </div>
 
           <div class="dash-btm">

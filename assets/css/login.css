@@ -59,6 +59,7 @@
 }
 
 .form-input {
+  height: 47px;
   background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--button-border-radius-9px);
@@ -108,9 +109,9 @@
 }
 
 .btn-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
+  width: 13px;
+  height: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-top-color: #fff;
   border-radius: 50%;
   animation: btn-spinner-spin 0.7s linear infinite;

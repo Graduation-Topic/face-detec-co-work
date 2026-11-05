@@ -75,9 +75,8 @@ def demo():
 @app.route("/login")
 @app.route("/login.html")
 def login():
-    # 若已登入 admin，直接跳到 dashboard
     if session.get("role") == "admin":
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("dashboard", page="overview"))
     response = app.make_response(render_template("login.html"))
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     return response
@@ -91,16 +90,30 @@ def docs():
     return response
 
 
+
 @app.route("/dashboard")
-def dashboard():
+@app.route("/dashboard.html")
+@app.route("/dashboard/<page>")
+def dashboard(page="overview"):
     if session.get("role") != "admin":
         return redirect(url_for("login"))
-    response = app.make_response(render_template("dashboard.html"))
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    allowed_pages = [
+        "overview",
+        "manage",
+        "settings"
+    ]
+    if page not in allowed_pages:
+        return "Page Not Found", 404
+    response = app.make_response(
+        render_template("dashboard.html")
+    )
+    response.headers["Cache-Control"] = (
+        "no-store, no-cache, must-revalidate"
+    )
     return response
 
 
-# ========== 認證 API ==========
+# ========== 驗證 API ==========
 
 @app.route("/api/auth/login", methods=["POST"])
 def api_login():
@@ -129,14 +142,12 @@ def api_login():
 
 @app.route("/api/auth/logout", methods=["POST"])
 def api_logout():
-    """登出"""
     session.clear()
     return jsonify({"status": "ok"})
 
 
 @app.route("/api/auth/me")
 def api_me():
-    """回傳目前登入狀態"""
     if "user_id" in session:
         return jsonify({
             "logged_in": True,
