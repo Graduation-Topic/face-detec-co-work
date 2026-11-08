@@ -202,13 +202,16 @@
 
 .dash-btn {
   display: flex;
+  text-align: center;
+  justify-content: center;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  padding: 6px 12px;
   font-family: var(--font-inter);
   font-size: 13px;
-  font-weight: bold;
   border: 1px solid var(--color-border);
+  border-radius: var(--button-border-radius-6px);
+  line-height: 1;
   cursor: pointer;
   transition:
     background-color 0.15s ease,
@@ -425,7 +428,7 @@
 
 .manage-stat-i {
   display: flex;
-  max-width: 240px;
+  max-width: 200px;
   width: 100%;
   height: auto;
   padding: 12px;
@@ -784,10 +787,6 @@
 
   .dash-title {
     font-size: 20px;
-  }
-
-  .action-bar {
-    flex-direction: column;
   }
 
   .stat-cards {

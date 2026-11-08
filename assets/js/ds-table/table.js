@@ -1,4 +1,3 @@
-// ===== 工具 =====
 const $ = (id) => document.getElementById(id);
 
 function showMsg(text, type) {
@@ -34,7 +33,6 @@ async function loadData() {
     }
     const data = await res.json();
 
-    // 統計卡
     const st = data.status || {};
     $("stat-window-count").textContent = st.window_count ?? "—";
     $("stat-window-threshold").textContent =
@@ -46,15 +44,13 @@ async function loadData() {
     $("stat-escalated-sub").textContent = isEsc
       ? "已超過門檻，請關注"
       : "目前無異常升級";
-
-    // 從 config 取保留設定
+    
     try {
       const cfg = await fetch("/api/config").then((r) => r.json());
       $("stat-retention").textContent = `${cfg.ALERT_RETENTION_DAYS} 天`;
       $("stat-max-records").textContent = cfg.ALERT_MAX_DB_RECORDS;
     } catch (_) {}
 
-    // 表格
     const alerts = data.recent_alerts || [];
     $("stat-total-db").textContent = alerts.length;
     const tbody = $("alert-tbody");
@@ -87,7 +83,6 @@ async function loadData() {
   }
 }
 
-// ===== 按鈕事件 =====
 $("btn-refresh").addEventListener("click", loadData);
 $("limit-select").addEventListener("change", loadData);
 
@@ -129,7 +124,6 @@ $("btn-logout").addEventListener("click", async (event) => {
   window.location.href = "/login";
 });
 
-// ===== 初始化 =====
 (async () => {
   const me = await fetch("/api/auth/me").then((r) => r.json());
   if (!me.logged_in || me.role !== "admin") {
