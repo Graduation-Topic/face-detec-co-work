@@ -143,7 +143,11 @@ window.handleAlertEvent = async function handleAlertEvent(alertInfo) {
     });
 
     if (!response.ok) {
-      console.warn("[ALERT API] Server returned status", response.status);
+      console.error(
+        "[ALERT API] Server returned status",
+        response.status,
+        await response.text(),
+      );
       return;
     }
 

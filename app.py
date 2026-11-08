@@ -296,6 +296,7 @@ def api_record_alert():
 
     except Exception as e:
         app.logger.error(f"[DB] Failed to save alert event: {e}")
+        return jsonify({"status": "error", "message": "警告事件儲存失敗"}), 500
 
     return jsonify(result)
 
@@ -316,7 +317,7 @@ def api_admin_alerts():
         ]
     except Exception as e:
         app.logger.error(f"[DB] Failed to query alert events: {e}")
-        recent_alerts_from_db = []
+        return jsonify({"status": "error", "message": "警告事件查詢失敗"}), 500
 
     return jsonify({
         "status": alert_manager.get_status(),

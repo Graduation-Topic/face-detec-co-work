@@ -37,8 +37,11 @@ function updateEdgeStats(frameStart, elapsedMs) {
   // 效能優化：環境測光改為每 10 幀 (約 330ms) 抽樣一次，避免每一幀觸發 GPU getImageData readback stall
   if (typeof window.analyzeEnvironment === "function") {
     window.__envFrameCounter = (window.__envFrameCounter || 0) + 1;
-    const shouldSample = window.__envFrameCounter % 10 === 0 || !window.__lastEnvResult;
-    const env = shouldSample ? window.analyzeEnvironment(cameraSource) : (window.__lastEnvResult || { brightness: null, highlightRatio: 0 });
+    const shouldSample =
+      window.__envFrameCounter % 10 === 0 || !window.__lastEnvResult;
+    const env = shouldSample
+      ? window.analyzeEnvironment(cameraSource)
+      : window.__lastEnvResult || { brightness: null, highlightRatio: 0 };
     if (shouldSample) window.__lastEnvResult = env;
     window.edgeStats.brightness = env.brightness;
     window.edgeStats.highlightRatio = env.highlightRatio;
@@ -49,22 +52,25 @@ function updateEdgeStats(frameStart, elapsedMs) {
 
     if (env.brightness !== null) {
       const cfg = window.edgeConfig || {};
-      const nightBrightThresh = cfg.ENV_NIGHT_BRIGHTNESS ;
-      const nightHighRatio = cfg.ENV_NIGHT_HIGHLIGHT_RATIO ;
-      const dayBrightThresh = cfg.ENV_DAY_BRIGHTNESS ;
-      const dayHighRatio = cfg.ENV_DAY_HIGHLIGHT_RATIO ;
+      const nightBrightThresh = cfg.ENV_NIGHT_BRIGHTNESS;
+      const nightHighRatio = cfg.ENV_NIGHT_HIGHLIGHT_RATIO;
+      const dayBrightThresh = cfg.ENV_DAY_BRIGHTNESS;
+      const dayHighRatio = cfg.ENV_DAY_HIGHLIGHT_RATIO;
       if (env.brightness < nightBrightThresh) {
         isNightMode = true;
         if (env.highlightRatio > nightHighRatio) {
           filterStyle = "contrast(1.1) brightness(1.2)";
-          envStatus = "(🌙 夜間 + 壓高光)";
+          envStatus = "(夜間 + 壓亮度)";
         } else {
           filterStyle = "contrast(1.5) brightness(1.5)";
-          envStatus = "(🌙 夜間增強)";
+          envStatus = "(夜間增強)";
         }
-      } else if (env.brightness > dayBrightThresh || env.highlightRatio > dayHighRatio) {
+      } else if (
+        env.brightness > dayBrightThresh ||
+        env.highlightRatio > dayHighRatio
+      ) {
         filterStyle = "brightness(0.85) contrast(1.1)";
-        envStatus = "(☀️ 強光壓制)";
+        envStatus = "(強光壓制)";
       }
     }
 

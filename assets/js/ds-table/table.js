@@ -12,7 +12,9 @@ function showMsg(text, type) {
 
 function formatTime(isoStr) {
   if (!isoStr) return "—";
-  return new Date(isoStr + "Z").toLocaleString("zh-TW", {
+  const date = new Date(isoStr);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("zh-TW", {
     hour12: false,
   });
 }
@@ -22,14 +24,16 @@ function shortId(sid) {
   return sid.length > 14 ? sid.slice(0, 14) + "…" : sid;
 }
 
-// ===== 資料載入 =====
-async function loadData() {
+  async function loadData() {
   const limit = $("limit-select").value;
   try {
     const res = await fetch(`/api/admin/alerts?limit=${limit}`);
     if (res.status === 401) {
       window.location.href = "/login";
       return;
+    }
+    if (!res.ok) {
+      throw new Error("警告事件查詢失敗");
     }
     const data = await res.json();
 
@@ -44,7 +48,7 @@ async function loadData() {
     $("stat-escalated-sub").textContent = isEsc
       ? "已超過門檻，請關注"
       : "目前無異常升級";
-    
+
     try {
       const cfg = await fetch("/api/config").then((r) => r.json());
       $("stat-retention").textContent = `${cfg.ALERT_RETENTION_DAYS} 天`;
@@ -125,12 +129,21 @@ $("btn-logout").addEventListener("click", async (event) => {
 });
 
 (async () => {
-  const me = await fetch("/api/auth/me").then((r) => r.json());
-  if (!me.logged_in || me.role !== "admin") {
-    window.location.href = "/login";
-    return;
+  try {
+    const res = await fetch("/api/auth/me");
+    const me = await res.json();
+
+    if (!res.ok || !me.logged_in || me.role !== "admin") {
+      window.location.href = "/login";
+      return;
+    }
+
+    $("access-identity").textContent = me.display_name || me.username;
+    await loadData();
+    document.body.classList.remove("dashboard-loading");
+    setInterval(loadData, 30000);
+  } catch (err) {
+    showMsg("載入失敗：" + err.message, "error");
+    document.body.classList.remove("dashboard-loading");
   }
-  $("access-identity").textContent = me.display_name || me.username;
-  loadData();
-  setInterval(loadData, 30000);
 })();

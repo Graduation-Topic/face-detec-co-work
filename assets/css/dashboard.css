@@ -1,6 +1,6 @@
 .dash-nav-inner {
   display: flex;
-  max-width: 1200px;
+  max-width: 1304px;
   width: 100%;
   height: 100%;
   gap: 48px;
@@ -9,7 +9,7 @@
 
 .dash-content {
   display: flex;
-  width: 1200px;
+  width: 1304px;
   height: calc(100vh - var(--nav-height));
   min-height: 0;
   flex-direction: row;
@@ -78,10 +78,8 @@
 
 .dash-rgt {
   display: flex;
-  flex: 1 1 auto;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
+  flex: 1 1 1000px;
+  width: 1000px;
   height: 100%;
   flex-direction: column;
   overflow-y: auto;
@@ -94,8 +92,20 @@
   background-color: var(--color-bg);
 }
 
+.dash-rgt::-webkit-scrollbar-button {
+  display: none;
+}
+
 .dash-rgt::-webkit-scrollbar-thumb {
   background-color: #666;
+}
+
+body.dashboard-loading .dash-content {
+  visibility: hidden;
+}
+
+body.dashboard-loading #access-identity {
+  visibility: hidden;
 }
 
 .dash-main[hidden] {
@@ -289,7 +299,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 8px 8px 20px;
+  padding: 8px;
   border-bottom: 1px solid var(--color-border);
   background-color: var(--color-surface);
 }
@@ -298,6 +308,7 @@
   font-family: var(--font-inter);
   font-size: 14px;
   font-weight: bold;
+  padding-left: 7px;
   color: var(--color-text-primary);
   user-select: none;
 }
@@ -506,17 +517,16 @@
   display: flex;
   width: 100%;
   height: 32px;
-  flex-direction: row;
+  flex: 0 0 32px;
   justify-content: space-between;
-  border-radius: 21px 21px 0 0;
-  gap: 12px;
+  align-items: center;
 }
 
 .manage-board-header input {
   display: flex;
   width: 100%;
   max-width: 400px;
-  height: auto;
+  height: 100%;
   align-items: center;
   background-color: transparent;
   outline: none;
@@ -537,12 +547,11 @@
 .manage-board-header button {
   display: flex;
   appearance: none;
+  height: 26px;
+  aspect-ratio: 1/1;
   justify-content: center;
   align-items: center;
   text-align: center;
-  width: auto;
-  height: auto;
-  padding: 11px 16px;
   background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--button-border-radius-6px);
@@ -555,6 +564,11 @@
 
 .manage-board-header button:hover {
   background-color: var(--color-surface-hover);
+}
+
+.manage-board-header button svg {
+  width: 16px;
+  aspect-ratio: 1/1;
 }
 
 .manage-viewer {

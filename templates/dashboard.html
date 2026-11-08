@@ -27,7 +27,7 @@
     <script src="/assets/js/ui/dashboard-page-switch.js" defer></script>
   </head>
 
-  <body>
+  <body class="dashboard-loading">
     <nav class="app-nav">
       <div class="dash-nav-inner">
         <div class="nav-lft">
@@ -48,7 +48,11 @@
             id="access-identity"
             class="access-identity user-select-none"
           ></span>
-          <a id="btn-logout" class="nav-link-a cursor-pointer" href="/login">
+          <a
+            id="btn-logout"
+            class="nav-link-a cursor-pointer user-select-none"
+            href="/login"
+          >
             登出
           </a>
         </div>
@@ -84,7 +88,6 @@
             <section class="dash-main" dash-page="overview">
               <div class="dash-header">
                 <h1 class="dash-title">後台</h1>
-                <p class="dash-subtitle">即時監控司機疲勞警告事件</p>
                 <div class="hint">
                   *給彭：左邊管理可以加要管理的員工，每個員工都有事件紀錄。
                 </div>
@@ -275,7 +278,21 @@
                     class="user-select-none cursor-pointer"
                     id="manage-add-employee"
                   >
-                    新增員工
+                    <svg
+                      width="100%"
+                      height="100%"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12 5V19M5 12H19"
+                        stroke="#ffffff"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
                   </button>
                 </div>
                 <div class="manage-viewer"></div>
