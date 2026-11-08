@@ -292,7 +292,7 @@ body.dashboard-loading #access-identity {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--color-border);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .table-panel-header {
@@ -582,6 +582,7 @@ body.dashboard-loading #access-identity {
 .settings-control-content {
   display: flex;
   width: 100%;
+  min-width: 0;
   min-height: 500px;
   height: 100%;
   flex-direction: column;
@@ -606,6 +607,7 @@ body.dashboard-loading #access-identity {
 .sec-setting {
   display: flex;
   width: 100%;
+  min-width: 0;
   height: 52px;
   justify-content: space-between;
   align-items: center;
@@ -622,6 +624,7 @@ body.dashboard-loading #access-identity {
 .sec-setting-lft {
   display: flex;
   flex: 1;
+  min-width: 0;
   height: 100%;
   justify-content: start;
   align-items: center;
@@ -644,7 +647,8 @@ body.dashboard-loading #access-identity {
 
 .sec-setting-rgt {
   display: flex;
-  flex: 1;
+  flex: 0 0 auto;
+  min-width: 0;
   height: 100%;
   justify-content: end;
   align-items: center;
@@ -748,7 +752,7 @@ body.dashboard-loading #access-identity {
   transform: translate(13px, -50%);
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1304px) {
   .dash-content {
     width: 100%;
   }
@@ -758,7 +762,7 @@ body.dashboard-loading #access-identity {
   }
 }
 
-@media (min-width: 801px) and (max-width: 1200px) {
+@media (min-width: 801px) and (max-width: 1304px) {
   .table-wrapper {
     overflow-x: auto;
   }
@@ -770,6 +774,7 @@ body.dashboard-loading #access-identity {
 
 @media (max-width: 800px) {
   .dash-content {
+    width: 100%;
     flex-direction: column;
     height: auto;
     min-height: calc(100vh - var(--nav-height));
@@ -793,8 +798,11 @@ body.dashboard-loading #access-identity {
   }
 
   .dash-rgt {
+    width: 100%;
+    flex: 0 1 auto;
     height: auto;
     min-height: 0;
+    min-width: 0;
     overflow-y: visible;
     padding: 0;
   }
