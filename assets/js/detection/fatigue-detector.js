@@ -390,9 +390,7 @@ export class FatigueDetector {
 
     let snapCandidate = false;
     if (this.nodRatio !== null && this.nodHistory.length > 0) {
-      const maxRatioInWindow = Math.max(
-        ...this.nodHistory.map((h) => h.ratio),
-      );
+      const maxRatioInWindow = Math.max(...this.nodHistory.map((h) => h.ratio));
       snapCandidate =
         maxRatioInWindow - this.nodRatio > snapDrop &&
         this.nodRatio < snapRatioLimit;
@@ -463,22 +461,22 @@ export class FatigueDetector {
     this.lastAlertTime = t;
     this.alertCount += 1;
     this.beepPending = true;
-    let reason = "疲勞指數過高 (Severe Fatigue)";
+    let reason = "疲勞率";
     const microsleepDur = this.cfg.MICROSLEEP_MIN_DURATION ?? 1.5;
     const nodMinDur = this.cfg.NOD_MIN_DURATION ?? 1.5;
 
     if (this.eyeClosureDur >= microsleepDur) {
-      reason = "微睡眠 (Microsleep)";
+      reason = "微睡眠";
     } else if (this.isSnapNodding) {
-      reason = "打瞌睡瞬間點頭 (Head Snap)";
+      reason = "打瞌睡瞬間點頭";
     } else if (this.nodDur >= nodMinDur) {
-      reason = "持續低頭 (Deep Nodding)";
+      reason = "持續低頭 ";
     } else if (this.perclos >= (this.cfg.PERCLOS_SEVERE_RATIO ?? 0.4)) {
       reason = "長時間閉眼 (High PERCLOS)";
     } else if (
       this.yawnTimestamps.length >= (this.cfg.YAWN_RATE_SEVERE_PER_MIN ?? 3)
     ) {
-      reason = "頻繁打哈欠 (Frequent Yawning)";
+      reason = "頻繁打哈欠";
     }
 
     if (this.onAlert)

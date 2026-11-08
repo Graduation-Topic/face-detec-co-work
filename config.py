@@ -65,7 +65,7 @@ class Config:
     EYE_CLOSURE_MIN_FRAMES = 20
     EYE_CLOSURE_MIN_DURATION = EYE_CLOSURE_MIN_FRAMES / FPS
 
-    # 微睡眠致命門檻 (秒)
+    # 微睡眠門檻 (秒)
     MICROSLEEP_MIN_DURATION = 1.5
 
     # 一般眨眼

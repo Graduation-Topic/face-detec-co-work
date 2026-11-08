@@ -85,7 +85,7 @@ function updateData(data) {
       : "--";
 
   // =======================================================
-  // Head 
+  // Head
   // =======================================================
 
   const pitchEl = document.getElementById("pitch-info");
@@ -110,8 +110,7 @@ function updateData(data) {
   if (brightEl) {
     const bVal = data.brightness ?? window.edgeStats?.brightness;
     const envStatus = window.edgeStats?.envStatus || "";
-    brightEl.textContent =
-      bVal != null ? `${bVal} ${envStatus}` : "--";
+    brightEl.textContent = bVal != null ? `${bVal} ${envStatus}` : "--";
   }
 
   // =======================================================
@@ -154,7 +153,9 @@ function updateFatigueStatus(level, score) {
 
   if (!window.edgeDetector?.isDetecting) {
     if (statusEl) {
-      statusEl.textContent = window.edgeDetector?.isCalibrated ? "已校準 (待命)" : "待命中";
+      statusEl.textContent = window.edgeDetector?.isCalibrated
+        ? "已校準"
+        : "待命中";
       statusEl.className = "fatigue-status-safe";
     }
     if (scoreEl) {

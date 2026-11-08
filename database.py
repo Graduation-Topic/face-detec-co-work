@@ -88,7 +88,11 @@ def get_user_by_username(username: str) -> Optional[User]:
 
 
 def insert_event(data: Dict[str, Any]) -> AlertEvent:
-    response = supabase.table("event").insert(data).execute()
+    event_data = dict(data)
+    event_data.setdefault(
+        "created_at", datetime.now(timezone.utc).isoformat()
+    )
+    response = supabase.table("event").insert(event_data).execute()
     rows = _response_rows(response)
     if not rows:
         raise RuntimeError("Supabase did not return the inserted alert event")

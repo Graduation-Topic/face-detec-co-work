@@ -71,13 +71,13 @@ function initializeAlert() {
     //
     // 等級 1：輕度疲勞 (微睡眠 / 瞬間點頭下墜 / 持續低頭)
     if (eyeClosureDur >= microsleepDur) {
-      alertText = "致命危險：微睡眠發生 (Microsleep)！";
+      alertText = "微睡眠發生 (Microsleep)！";
       isCritical = true;
     } else if (isSnapNodding) {
-      alertText = "致命危險：打瞌睡點頭 (Head Snap)！";
+      alertText = "打瞌睡點頭 (Head Snap)！";
       isCritical = true;
     } else if (nodDur >= nodMinDur) {
-      alertText = "致命危險：持續低頭打瞌睡！";
+      alertText = "持續低頭打瞌睡！";
       isCritical = true;
     }
 
@@ -124,7 +124,7 @@ window.handleAlertEvent = async function handleAlertEvent(alertInfo) {
 
     if (typeof addSystemLog === "function") {
       addSystemLog(
-        `[警報] 觸發警告：${alertInfo.reason} (次數: ${alertInfo.count})`,
+        `[ALERT] ${alertInfo.reason} x${alertInfo.count}`,
         "warning",
       );
     }
