@@ -7,8 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
   exportBtn.addEventListener("click", () => {
     if (exportBtn.disabled) return;
 
-    console.log("[EXPORT] button clicked");
-
     if (typeof addSystemLog === "function") {
       addSystemLog("[EXPORT] 下載資料", "start");
     }
@@ -27,8 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const logCount = detector.logHistory?.length ?? 0;
 
-    console.log("[EXPORT] frontend log count:", logCount);
-
     if (logCount === 0) {
       console.warn("[EXPORT] No frontend log data");
 
@@ -41,11 +37,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       detector.downloadCSV();
-
-      console.log(
-        "[EXPORT] frontend CSV download triggered",
-        `rows=${logCount}`,
-      );
 
       if (typeof addSystemLog === "function") {
         addSystemLog(

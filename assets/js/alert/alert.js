@@ -116,7 +116,12 @@ function initializeAlert() {
 }
 
 // ===== Alert Event Dispatcher to Backend =====
-window.handleAlertEvent = async function handleAlertEvent(alertInfo) {
+const alertQueue = [];
+let isSendingAlert = false;
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function sendAlert(alertInfo) {
   try {
     const sessionId =
       window.edgeDetector?.sessionId ||
@@ -129,41 +134,70 @@ window.handleAlertEvent = async function handleAlertEvent(alertInfo) {
       );
     }
 
-    const response = await fetch("/api/alert", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        session_id: sessionId,
-        score: alertInfo.score,
-        level: alertInfo.level,
-        reason: alertInfo.reason,
-        count: alertInfo.count,
-        timestamp: Date.now() / 1000,
-      }),
-    });
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const response = await fetch("/api/alert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: sessionId,
+            score: alertInfo.score,
+            level: alertInfo.level,
+            reason: alertInfo.reason,
+            count: alertInfo.count,
+            timestamp: Date.now() / 1000,
+          }),
+        });
 
-    if (!response.ok) {
-      console.error(
-        "[ALERT API] Server returned status",
-        response.status,
-        await response.text(),
-      );
-      return;
-    }
+        if (response.ok) {
+          const result = await response.json();
+          if (result.is_new_escalation) {
+            const windowMin = Math.round((result.window_sec || 300) / 60);
+            if (typeof addSystemLog === "function") {
+              addSystemLog(
+                `[後台通報] 警告已在 ${windowMin} 分鐘內累積達 ${result.window_count} 次，已通報後台管理者！`,
+                "error",
+              );
+            }
+          }
+          return;
+        }
 
-    const result = await response.json();
-    if (result.is_new_escalation) {
-      const windowMin = Math.round((result.window_sec || 300) / 60);
-      if (typeof addSystemLog === "function") {
-        addSystemLog(
-          `[後台通報] 警告已在 ${windowMin} 分鐘內累積達 ${result.window_count} 次，已通報後台管理者！`,
-          "error",
-        );
+        const body = await response.text();
+        if (response.status < 500 || attempt === 3) {
+          console.error(
+            "[ALERT API] Server returned status",
+            response.status,
+            body,
+          );
+          return;
+        }
+      } catch (error) {
+        if (attempt === 3) throw error;
       }
+
+      await wait(250 * 2 ** (attempt - 1));
     }
   } catch (error) {
     console.error("[ALERT] Failed to post alert event:", error);
   }
+}
+
+async function processAlertQueue() {
+  if (isSendingAlert) return;
+  isSendingAlert = true;
+  try {
+    while (alertQueue.length) {
+      await sendAlert(alertQueue.shift());
+    }
+  } finally {
+    isSendingAlert = false;
+  }
+}
+
+window.handleAlertEvent = function handleAlertEvent(alertInfo) {
+  alertQueue.push({ ...alertInfo });
+  void processAlertQueue();
 };
 
 initializeAlert();

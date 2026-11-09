@@ -250,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
   startBrowserCamera()
     .then(() => {
       if (typeof addSystemLog === "function") {
-        addSystemLog("[OK] 鏡頭與特徵即時預覽就緒", "success");
+        addSystemLog("[OK] 鏡頭即時預覽", "success");
       }
     })
     .catch((error) => {

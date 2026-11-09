@@ -101,11 +101,35 @@
 }
 
 body.dashboard-loading .dash-content {
-  visibility: hidden;
+  visibility: visible;
 }
 
 body.dashboard-loading #access-identity {
   visibility: hidden;
+}
+
+body.dashboard-loading .stat-value,
+body.dashboard-loading .stat-sub,
+body.dashboard-loading #alert-tbody {
+  color: transparent;
+  background: #151515;
+  background: linear-gradient(110deg, #151515 8%, #292929 18%, #151515 33%);
+  background-size: 200% 100%;
+  animation: dashboard-loading-shimmer 1.5s linear infinite;
+}
+
+body.dashboard-loading #alert-tbody {
+  color: transparent;
+  border-radius: 4px;
+}
+
+@keyframes dashboard-loading-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
 }
 
 .dash-main[hidden] {
@@ -233,15 +257,6 @@ body.dashboard-loading #access-identity {
   transform: scale(0.985);
 }
 
-.dash-btn-default {
-  background-color: var(--color-button-bg);
-  color: var(--color-text-primary);
-}
-
-.dash-btn-default:hover {
-  background-color: var(--color-button-bg-hover);
-}
-
 .dash-btn-warning {
   background-color: rgba(255, 184, 77, 0.12);
   color: var(--color-warning);
@@ -250,16 +265,6 @@ body.dashboard-loading #access-identity {
 
 .dash-btn-warning:hover {
   background-color: rgba(255, 184, 77, 0.2);
-}
-
-.dash-btn-danger {
-  background-color: rgba(255, 77, 77, 0.12);
-  color: var(--color-danger);
-  border-color: rgba(255, 77, 77, 0.3);
-}
-
-.dash-btn-danger:hover {
-  background-color: rgba(255, 77, 77, 0.2);
 }
 
 .dash-msg {
@@ -370,7 +375,6 @@ body.dashboard-loading #access-identity {
   font-family: var(--font-inter);
   font-size: 11px;
   font-weight: bold;
-  text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 10px 16px;
   text-align: left;
@@ -588,6 +592,7 @@ body.dashboard-loading #access-identity {
   flex-direction: column;
   gap: 28px;
 }
+
 
 .setting-h {
   display: flex;

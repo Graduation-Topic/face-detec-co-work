@@ -49,19 +49,16 @@ function shortId(sid) {
       ? "已超過門檻，請關注"
       : "目前無異常升級";
 
-    try {
-      const cfg = await fetch("/api/config").then((r) => r.json());
-      $("stat-retention").textContent = `${cfg.ALERT_RETENTION_DAYS} 天`;
-      $("stat-max-records").textContent = cfg.ALERT_MAX_DB_RECORDS;
-    } catch (_) {}
-
     const alerts = data.recent_alerts || [];
     $("stat-total-db").textContent = alerts.length;
+    const config = await fetch("/api/config").then((response) => response.json());
+    $("stat-retention").textContent = `${config.ALERT_RETENTION_DAYS} 天`;
+    $("stat-max-records").textContent = config.ALERT_MAX_DB_RECORDS;
     const tbody = $("alert-tbody");
 
     if (!alerts.length) {
       tbody.innerHTML =
-        '<tr><td colspan="7" class="table-empty">目前沒有警告事件紀錄</td></tr>';
+        '<tr><td colspan="6" class="table-empty">目前沒有警告事件紀錄</td></tr>';
       return;
     }
 
@@ -69,11 +66,10 @@ function shortId(sid) {
       .map(
         (a) => `
         <tr class="${a.is_new_escalation ? "row-escalated" : ""}">
-          <td>${a.id}</td>
           <td>${formatTime(a.created_at)}</td>
-          <td title="${a.session_id || ""}">${shortId(a.session_id)}</td>
+          <td>${a.user_id || "—"}</td>
           <td>${a.reason || "—"}</td>
-          <td>${a.score != null ? a.score.toFixed(1) : "—"}</td>
+          <td>${a.score != null ? Number(a.score).toFixed(1) : "—"}</td>
           <td>${a.window_count ?? "—"}</td>
           <td class="${a.is_escalated ? "cell-danger" : "cell-ok"}">
             ${a.is_escalated ? "是" : "正常"}
@@ -87,7 +83,6 @@ function shortId(sid) {
   }
 }
 
-$("btn-refresh").addEventListener("click", loadData);
 $("limit-select").addEventListener("change", loadData);
 
 $("btn-reset").addEventListener("click", async () => {
@@ -99,26 +94,6 @@ $("btn-reset").addEventListener("click", async () => {
   }
   const d = await res.json();
   showMsg(d.message || "已重置", "info");
-  loadData();
-});
-
-$("btn-purge").addEventListener("click", async () => {
-  if (
-    !confirm(
-      "確定要清理過期警告資料？\n超過保留天數的記錄將被永久刪除，此操作無法還原。",
-    )
-  )
-    return;
-  const res = await fetch("/api/admin/alerts/purge", { method: "POST" });
-  if (res.status === 401) {
-    window.location.href = "/login";
-    return;
-  }
-  const d = await res.json();
-  showMsg(
-    d.message || "清理完成",
-    d.status === "success" ? "success" : "error",
-  );
   loadData();
 });
 
@@ -138,10 +113,15 @@ $("btn-logout").addEventListener("click", async (event) => {
       return;
     }
 
-    $("access-identity").textContent = me.display_name || me.username;
+    const roleLabels = {
+      admin: "管理員",
+      employee: "員工",
+    };
+    $("access-identity").textContent =
+      roleLabels[me.role] || me.display_name || me.username;
     await loadData();
     document.body.classList.remove("dashboard-loading");
-    setInterval(loadData, 30000);
+    setInterval(loadData, 5000);
   } catch (err) {
     showMsg("載入失敗：" + err.message, "error");
     document.body.classList.remove("dashboard-loading");
