@@ -186,11 +186,6 @@ class AlertManager:
                 ),
             }
 
-    def get_recent_alerts(self, limit: int = 50) -> List[Dict[str, Any]]:
-        """獲取最新警報清單（供後台或老闆查看）"""
-        with self._lock:
-            return list(self.alert_history[-limit:])
-
     def get_escalation_history(self, limit: int = 50) -> List[Dict[str, Any]]:
         """獲取升級通報歷史紀錄"""
         with self._lock:

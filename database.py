@@ -40,6 +40,7 @@ class User:
     display_name: Optional[str]
     password_hash: str
     role: str
+    manager_id: Optional[int] = None
     created_at: Optional[str] = None
 
     @classmethod
@@ -49,9 +50,20 @@ class User:
             username=row["username"],
             display_name=row.get("display_name"),
             password_hash=row["password_hash"],
-            role=row["role"],
+            role=row.get("role", "driver"),
+            manager_id=row.get("manager_id"),
             created_at=row.get("created_at"),
         )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "username": self.username,
+            "display_name": self.display_name or self.username,
+            "role": self.role,
+            "manager_id": self.manager_id,
+            "created_at": self.created_at,
+        }
 
 
 @dataclass
@@ -87,6 +99,58 @@ def get_user_by_username(username: str) -> Optional[User]:
     return User.from_row(rows[0]) if rows else None
 
 
+def get_user_by_id(user_id: int) -> Optional[User]:
+    response = (
+        supabase.table("users")
+        .select("*")
+        .eq("id", user_id)
+        .limit(1)
+        .execute()
+    )
+    rows = _response_rows(response)
+    return User.from_row(rows[0]) if rows else None
+
+
+def create_user(
+    username: str,
+    password_hash: str,
+    display_name: Optional[str] = None,
+    role: str = "driver",
+    manager_id: Optional[int] = None,
+) -> User:
+    payload: Dict[str, Any] = {
+        "username": username,
+        "password_hash": password_hash,
+        "display_name": display_name or username,
+        "role": role,
+    }
+    if manager_id is not None:
+        payload["manager_id"] = manager_id
+    response = supabase.table("users").insert(payload).execute()
+    rows = _response_rows(response)
+    if not rows:
+        raise RuntimeError("Supabase did not return the created user")
+    return User.from_row(rows[0])
+
+
+def list_users(
+    role: Optional[str] = None,
+    manager_id: Optional[int] = None,
+) -> List[User]:
+    query = supabase.table("users").select("*")
+    if role:
+        query = query.eq("role", role)
+    if manager_id is not None:
+        query = query.eq("manager_id", manager_id)
+    response = query.order("id", desc=False).execute()
+    return [User.from_row(r) for r in _response_rows(response)]
+
+
+def delete_user(user_id: int) -> bool:
+    supabase.table("users").delete().eq("id", user_id).execute()
+    return True
+
+
 def insert_event(data: Dict[str, Any]) -> AlertEvent:
     event_data = dict(data)
     event_data.setdefault(
@@ -99,15 +163,24 @@ def insert_event(data: Dict[str, Any]) -> AlertEvent:
     return AlertEvent.from_row(rows[0])
 
 
-def list_recent_alerts(limit: int) -> List[AlertEvent]:
-    response = (
-        supabase.table("event")
-        .select("*")
-        .order("created_at", desc=True)
-        .limit(limit)
-        .execute()
-    )
-    return [AlertEvent.from_row(row) for row in _response_rows(response)]
+def list_recent_alerts(limit: int, driver_ids: Optional[List[int]] = None) -> List[AlertEvent]:
+    try:
+        query = supabase.table("event").select("*").order("created_at", desc=True).limit(limit)
+        if driver_ids is not None:
+            if not driver_ids:
+                return []
+            query = query.in_("user_id", driver_ids)
+        response = query.execute()
+        return [AlertEvent.from_row(row) for row in _response_rows(response)]
+    except Exception:
+        response = (
+            supabase.table("event")
+            .select("*")
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return [AlertEvent.from_row(row) for row in _response_rows(response)]
 
 
 def purge_old_alerts() -> int:

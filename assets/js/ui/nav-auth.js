@@ -17,8 +17,13 @@
 
       if (me.logged_in) {
         signInBtns.forEach((btn) => {
-          btn.textContent = "總覽";
-          btn.href = "/dashboard/overview";
+          if (me.role === "admin" || me.role === "super_admin") {
+            btn.textContent = "總覽";
+            btn.href = "/dashboard/overview";
+          } else {
+            btn.textContent = "測試版";
+            btn.href = "/demo";
+          }
         });
       }
     } catch (error) {

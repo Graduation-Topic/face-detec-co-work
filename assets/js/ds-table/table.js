@@ -133,12 +133,13 @@ $("btn-logout").addEventListener("click", async (event) => {
     const res = await fetch("/api/auth/me");
     const me = await res.json();
 
-    if (!res.ok || !me.logged_in || me.role !== "admin") {
+    if (!res.ok || !me.logged_in || !["admin", "super_admin"].includes(me.role)) {
       window.location.href = "/login";
       return;
     }
 
-    $("access-identity").textContent = me.display_name || me.username;
+    const roleTag = me.role === "super_admin" ? " (總管理員)" : " (管理員)";
+    $("access-identity").textContent = (me.display_name || me.username) + roleTag;
     await loadData();
     document.body.classList.remove("dashboard-loading");
     setInterval(loadData, 30000);
