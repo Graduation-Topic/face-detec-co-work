@@ -13,16 +13,21 @@ if not IS_RENDER:
     load_dotenv()
 
 from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, session, url_for
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from alert_manager import AlertManager
 from config import Config
 from database import (
-get_user_by_username,
-init_db,
-insert_event,
-list_recent_alerts,
-purge_old_alerts,
+    create_user,
+    delete_user,
+    get_user_by_id,
+    get_user_by_username,
+    init_db,
+    insert_event,
+    list_recent_alerts,
+    list_users,
+    purge_old_alerts,
+    update_user,
 )
 from state import State
 
@@ -52,10 +57,12 @@ init_db()
 # ========== 工具函式 ==========
 
 def _require_admin():
-    """若 session 不是 admin，回傳 401 JSON；否則回傳 None（代表通過）"""
-    if session.get("role") != "admin":
+    """若 session 不是 admin 或 super_admin，回傳 401 JSON；否則回傳 None（代表通過）"""
+    role = session.get("role")
+    if role not in ("admin", "super_admin"):
         return jsonify({"status": "error", "message": "請先以管理員身份登入"}), 401
     return None
+
 
 # ========== 頁面路由 ==========
 
@@ -79,8 +86,10 @@ def demo():
 @app.route("/login")
 @app.route("/login.html")
 def login():
-    if session.get("role") == "admin":
+    if session.get("role") in ("admin", "super_admin"):
         return redirect(url_for("dashboard", page="overview"))
+    elif session.get("role") == "driver":
+        return redirect(url_for("demo"))
     response = app.make_response(render_template("login.html"))
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     return response
@@ -99,7 +108,7 @@ def docs():
 @app.route("/dashboard.html")
 @app.route("/dashboard/<page>")
 def dashboard(page="overview"):
-    if session.get("role") != "admin":
+    if session.get("role") not in ("admin", "super_admin"):
         return redirect(url_for("login"))
     allowed_pages = [
         "overview",
@@ -121,7 +130,7 @@ def dashboard(page="overview"):
 
 @app.route("/api/auth/login", methods=["POST"])
 def api_login():
-    """管理員登入"""
+    """管理員與使用者登入"""
     data = request.get_json(silent=True) or {}
     username = str(data.get("username", "")).strip()
     password = str(data.get("password", ""))
@@ -130,18 +139,25 @@ def api_login():
         return jsonify({"status": "error", "message": "請輸入帳號與密碼"}), 400
 
     user = get_user_by_username(username)
-    password_matches = False
-    if user:
-        try:
-            password_matches = check_password_hash(
-                user.password_hash, password
-            )
-        except ValueError:
-            app.logger.warning(
-                "Invalid password hash stored for user %s", user.username
-            )
+    if not user:
+        return jsonify({"status": "error", "message": "帳號或密碼錯誤"}), 401
 
-    if user is not None and password_matches:
+    is_valid_pw = False
+    try:
+        is_valid_pw = check_password_hash(user.password_hash, password)
+    except Exception:
+        is_valid_pw = False
+
+    # 相容性機制：若資料庫內為未加密明文密碼（如在 Supabase 手動填入），予以通過並自動升級為雜湊
+    if not is_valid_pw and user.password_hash == password:
+        is_valid_pw = True
+        try:
+            new_hash = generate_password_hash(password)
+            update_user(user.id, password_hash=new_hash)
+        except Exception as update_err:
+            app.logger.warning(f"[AUTH] Auto-upgrade password hash failed: {update_err}")
+
+    if is_valid_pw:
         session.clear()
         session["user_id"] = user.id
         session["username"] = user.username
@@ -155,6 +171,12 @@ def api_login():
     return jsonify({"status": "error", "message": "帳號或密碼錯誤"}), 401
 
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 @app.route("/api/auth/logout", methods=["POST"])
 def api_logout():
     session.clear()
@@ -166,6 +188,7 @@ def api_me():
     if "user_id" in session:
         return jsonify({
             "logged_in": True,
+            "id": session.get("user_id"),
             "username": session.get("username"),
             "display_name": session.get("display_name"),
             "role": session.get("role"),
@@ -280,6 +303,7 @@ def api_record_alert():
     level = str(data.get("level", "Severe"))
     if level not in ALLOWED_FATIGUE_LEVELS:
         return jsonify({"status": "error", "message": "疲勞等級格式錯誤"}), 400
+
     reason = str(data.get("reason", "疲勞警告"))
     count = data.get("count")
     client_timestamp = data.get("timestamp")
@@ -291,8 +315,7 @@ def api_record_alert():
         except (TypeError, ValueError, OverflowError):
             return jsonify({"status": "error", "message": "事件時間格式錯誤"}), 400
 
-    # 1. AlertManager 處理滑動視窗邏輯
-    # 使用伺服器時間避免使用者裝置時鐘偏差造成滑動視窗誤判。
+    # 1. AlertManager 處理滑動視窗邏輯 (使用伺服器時間防偏)
     result = alert_manager.record_alert(
         session_id=session_id,
         score=score,
@@ -309,20 +332,22 @@ def api_record_alert():
 
     # 3. 寫入資料庫（異常不影響主流程回應）
     try:
-        insert_event(
-            {
-                "uuid": user_uuid,
-                "session_id": session_id,
-                "score": score,
-                "level": level,
-                "reason": reason,
-                "client_count": count,
-                "window_count": result["window_count"],
-                "is_escalated": bool(result["is_escalated"]),
-                "is_new_escalation": bool(result["is_new_escalation"]),
-                "client_timestamp": client_timestamp,
-            }
-        )
+        event_payload = {
+            "uuid": user_uuid,
+            "session_id": session_id,
+            "score": score,
+            "level": level,
+            "reason": reason,
+            "client_count": count,
+            "window_count": result["window_count"],
+            "is_escalated": bool(result["is_escalated"]),
+            "is_new_escalation": bool(result["is_new_escalation"]),
+            "client_timestamp": client_timestamp,
+        }
+
+        insert_event(event_payload)
+
+        # 4. 順便清理過期資料（不影響回應時間，偶發失敗可忽略）
         try:
             purge_old_alerts()
         except Exception as purge_err:
@@ -349,10 +374,22 @@ def api_admin_alerts():
     if not 1 <= limit <= 50:
         return jsonify({"status": "error", "message": "單頁最多顯示 50 筆"}), 400
 
+    current_role = session.get("role")
+    current_user_id = session.get("user_id")
+
+    driver_ids = None
+    if current_role == "admin":
+        # 一般管理員只能查看自己名下駕駛員的警報
+        try:
+            my_drivers = list_users(role="driver", manager_id=current_user_id)
+            driver_ids = [d.id for d in my_drivers]
+        except Exception as err:
+            app.logger.warning(f"[DB] list_users failed when filtering alerts: {err}")
+
     # 從資料庫讀取最新警告事件（依時間倒序）
     try:
         recent_alerts_from_db = [
-            event.to_dict() for event in list_recent_alerts(limit)
+            event.to_dict() for event in list_recent_alerts(limit, driver_ids=driver_ids)
         ]
     except Exception as e:
         app.logger.error(f"[DB] Failed to query alert events: {e}")
@@ -363,6 +400,175 @@ def api_admin_alerts():
         "recent_alerts": recent_alerts_from_db,
         "escalations": alert_manager.get_escalation_history(limit=limit),
     })
+
+
+# ========== 使用者與員工管理 API (RBAC) ==========
+
+@app.route("/api/admin/users", methods=["GET"])
+def api_admin_list_users():
+    """獲取可管轄的使用者列表"""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    current_role = session.get("role")
+    current_user_id = session.get("user_id")
+
+    try:
+        # 建立管理者名稱查找表
+        managers_dict = {}
+        try:
+            for m in list_users(role="admin"):
+                managers_dict[m.id] = m.display_name or m.username
+            for m in list_users(role="super_admin"):
+                managers_dict[m.id] = m.display_name or m.username
+        except Exception:
+            pass
+
+        if current_role == "super_admin":
+            # 總管理員可以看到所有使用者
+            users = list_users()
+        else:
+            # 一般管理員只能看到自己名下的駕駛員
+            users = list_users(role="driver", manager_id=current_user_id)
+
+        user_list = []
+        for u in users:
+            item = u.to_dict()
+            if u.manager_id:
+                item["manager_name"] = managers_dict.get(u.manager_id, f"管理員 #{u.manager_id}")
+            else:
+                item["manager_name"] = "無 (直屬/管理者)"
+            user_list.append(item)
+
+        return jsonify({
+            "status": "success",
+            "users": user_list,
+            "current_role": current_role,
+            "current_user_id": current_user_id,
+        })
+    except Exception as e:
+        app.logger.error(f"[DB] list_users error: {e}")
+        return jsonify({"status": "error", "message": f"載入使用者清單失敗: {e}"}), 500
+
+
+@app.route("/api/admin/managers", methods=["GET"])
+def api_admin_list_managers():
+    """獲取所有管理員列表（供總管理員指派所屬主管使用）"""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    try:
+        admins = list_users(role="admin")
+        supers = list_users(role="super_admin")
+        all_mgrs = admins + supers
+        return jsonify({
+            "status": "success",
+            "managers": [
+                {
+                    "id": m.id,
+                    "username": m.username,
+                    "display_name": m.display_name or m.username,
+                    "role": m.role,
+                }
+                for m in all_mgrs
+            ]
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/admin/users", methods=["POST"])
+def api_admin_create_user():
+    """建立新使用者 (模式 A: 後台管理員開通)"""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    current_role = session.get("role")
+    current_user_id = session.get("user_id")
+
+    data = request.get_json(silent=True) or {}
+    username = str(data.get("username", "")).strip()
+    password = str(data.get("password", ""))
+    display_name = str(data.get("display_name", "")).strip() or username
+    requested_role = str(data.get("role", "driver")).strip()
+
+    if not username or not password:
+        return jsonify({"status": "error", "message": "帳號與密碼為必填欄位"}), 400
+
+    if len(password) < 4:
+        return jsonify({"status": "error", "message": "密碼長度至少需 4 個字元"}), 400
+
+    # 權限驗證與角色分配
+    if current_role != "super_admin":
+        # 一般管理員只能建立 driver，且 manager_id 強制為當前登入者
+        requested_role = "driver"
+        manager_id = current_user_id
+    else:
+        # 總管理員可以建立 admin 或 driver
+        if requested_role not in ("admin", "driver"):
+            requested_role = "driver"
+        
+        if requested_role == "driver":
+            raw_mgr = data.get("manager_id")
+            manager_id = str(raw_mgr).strip() if raw_mgr else None
+        else:
+            manager_id = None
+
+    try:
+        # 檢查帳號是否已存在
+        existing = get_user_by_username(username)
+        if existing:
+            return jsonify({"status": "error", "message": f"帳號 '{username}' 已被使用"}), 400
+
+        pw_hash = generate_password_hash(password)
+        new_user = create_user(
+            username=username,
+            password_hash=pw_hash,
+            display_name=display_name,
+            role=requested_role,
+            manager_id=manager_id,
+        )
+        return jsonify({
+            "status": "success",
+            "message": f"成功建立帳號：{new_user.username}",
+            "user": new_user.to_dict(),
+        }), 201
+    except Exception as e:
+        app.logger.error(f"[DB] create_user error: {e}")
+        return jsonify({"status": "error", "message": f"建立失敗: {e}"}), 500
+
+
+@app.route("/api/admin/users/<user_id>", methods=["DELETE"])
+def api_admin_delete_user(user_id):
+    """刪除使用者"""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    current_role = session.get("role")
+    current_user_id = session.get("user_id")
+
+    if user_id == current_user_id:
+        return jsonify({"status": "error", "message": "無法刪除目前登入的自己帳號"}), 400
+
+    try:
+        target = get_user_by_id(user_id)
+        if not target:
+            return jsonify({"status": "error", "message": "找不到該使用者"}), 404
+
+        # 權限驗證：一般管理員只能刪除自己管轄名下的 driver
+        if current_role != "super_admin":
+            if target.role != "driver" or target.manager_id != current_user_id:
+                return jsonify({"status": "error", "message": "您無權刪除此員工"}), 403
+
+        delete_user(user_id)
+        return jsonify({"status": "success", "message": f"已刪除使用者：{target.username}"})
+    except Exception as e:
+        app.logger.error(f"[DB] delete_user error: {e}")
+        return jsonify({"status": "error", "message": f"刪除失敗: {e}"}), 500
 
 
 @app.route("/api/admin/alerts/reset", methods=["POST"])
@@ -380,6 +586,25 @@ def api_admin_alerts_reset():
         "message": "警報統計與通報狀態已重置（資料庫紀錄保留）",
         "data": alert_manager.get_status(),
     })
+
+
+@app.route("/api/admin/alerts/purge", methods=["POST"])
+def api_admin_alerts_purge():
+    """管理員手動觸發清理過期警告事件"""
+    guard = _require_admin()
+    if guard:
+        return guard
+
+    try:
+        deleted = purge_old_alerts()
+        return jsonify({
+            "status": "success",
+            "message": f"已清理 {deleted} 筆過期警告事件",
+            "deleted_count": deleted,
+        })
+    except Exception as e:
+        app.logger.error(f"[DB] purge failed: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route("/model/<path:filename>")

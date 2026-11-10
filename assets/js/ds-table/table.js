@@ -67,7 +67,7 @@ function shortId(sid) {
         (a) => `
         <tr class="${a.is_new_escalation ? "row-escalated" : ""}">
           <td>${formatTime(a.created_at)}</td>
-          <td>${a.user_id || "—"}</td>
+          <td>${a.user_id || a.userName || a.userID || "—"}</td>
           <td>${a.reason || "—"}</td>
           <td>${a.score != null ? Number(a.score).toFixed(1) : "—"}</td>
           <td>${a.window_count ?? "—"}</td>
@@ -108,17 +108,19 @@ $("btn-logout").addEventListener("click", async (event) => {
     const res = await fetch("/api/auth/me");
     const me = await res.json();
 
-    if (!res.ok || !me.logged_in || me.role !== "admin") {
+    if (!res.ok || !me.logged_in || !["admin", "super_admin"].includes(me.role)) {
       window.location.href = "/login";
       return;
     }
 
     const roleLabels = {
-      admin: "管理員",
+      super_admin: "總管理員",
+      admin: "車隊管理員",
+      driver: "駕駛員",
       employee: "員工",
     };
-    $("access-identity").textContent =
-      roleLabels[me.role] || me.display_name || me.username;
+    const roleTag = roleLabels[me.role] ? ` (${roleLabels[me.role]})` : "";
+    $("access-identity").textContent = (me.display_name || me.username) + roleTag;
     await loadData();
     document.body.classList.remove("dashboard-loading");
     setInterval(loadData, 5000);

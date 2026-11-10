@@ -25,6 +25,7 @@
 
     <script src="/assets/js/ds-table/table.js" defer></script>
     <script src="/assets/js/ui/dashboard-page-switch.js" defer></script>
+    <script src="/assets/js/ui/manage-users.js" defer></script>
   </head>
 
   <body class="dashboard-loading">
@@ -51,7 +52,7 @@
           <a
             id="btn-logout"
             class="nav-link-a cursor-pointer user-select-none"
-            href="/login"
+            href="/logout"
           >
             登出
           </a>
@@ -170,7 +171,7 @@
                         <th>原因</th>
                         <th>疲勞分數</th>
                         <th>視窗計數</th>
-                        <th>升級通報</th>
+                        <th>通報</th>
                       </tr>
                     </thead>
                     <tbody id="alert-tbody">
@@ -287,7 +288,28 @@
                     </svg>
                   </button>
                 </div>
-                <div class="manage-viewer"></div>
+                <div class="manage-viewer" id="manage-viewer">
+                  <div class="table-wrapper">
+                    <table class="alert-table" id="manage-user-table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>帳號</th>
+                          <th>姓名</th>
+                          <th>身分角色</th>
+                          <th>所屬主管</th>
+                          <th>建立時間</th>
+                          <th>操作</th>
+                        </tr>
+                      </thead>
+                      <tbody id="manage-user-tbody">
+                        <tr>
+                          <td colspan="7" class="table-empty">載入中...</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </section>
             <section class="dash-main" dash-page="settings" hidden>
@@ -407,5 +429,48 @@
         </div>
       </div>
     </main>
+
+    <!-- 新增員工彈窗 Modal (模式 A: 後台管理員開通) -->
+    <div id="add-user-modal" class="dash-modal hidden">
+      <div class="dash-modal-backdrop" id="modal-backdrop"></div>
+      <div class="dash-modal-box">
+        <div class="dash-modal-header">
+          <h2 class="dash-modal-title">新增員工帳號</h2>
+          <button type="button" id="btn-close-modal" class="btn-close-modal cursor-pointer" aria-label="關閉">&times;</button>
+        </div>
+        <form id="add-user-form" autocomplete="off">
+          <div class="modal-form-group">
+            <label for="inp-new-username">登入帳號 *</label>
+            <input type="text" id="inp-new-username" required placeholder="例如：driver01" />
+          </div>
+          <div class="modal-form-group">
+            <label for="inp-new-name">員工姓名 / 顯示名稱 *</label>
+            <input type="text" id="inp-new-name" required placeholder="例如：王小明" />
+          </div>
+          <div class="modal-form-group">
+            <label for="inp-new-password">初始密碼 *</label>
+            <input type="password" id="inp-new-password" required placeholder="至少 4 位數" />
+          </div>
+          <div class="modal-form-group" id="group-new-role">
+            <label for="select-new-role">角色身分 *</label>
+            <select id="select-new-role">
+              <option value="driver" selected>🚗 駕駛員</option>
+              <option value="admin">👔 車隊管理員</option>
+            </select>
+          </div>
+          <div class="modal-form-group" id="group-new-manager">
+            <label for="select-new-manager">指派所屬主管</label>
+            <select id="select-new-manager">
+              <option value="">(無 / 直屬總管理員)</option>
+            </select>
+          </div>
+          <div id="add-user-error" class="dash-msg dash-msg-error hidden"></div>
+          <div class="dash-modal-footer">
+            <button type="button" id="btn-cancel-modal" class="btn-modal-cancel cursor-pointer">取消</button>
+            <button type="submit" id="btn-submit-modal" class="btn-modal-submit cursor-pointer">確認建立</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </body>
 </html>
