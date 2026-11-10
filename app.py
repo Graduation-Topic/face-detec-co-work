@@ -124,7 +124,7 @@ def dashboard(page="overview"):
 
 @app.route("/api/auth/login", methods=["POST"])
 def api_login():
-    """管理員登入"""
+    """管理員與使用者登入"""
     data = request.get_json(silent=True) or {}
     username = str(data.get("username", "")).strip()
     password = str(data.get("password", ""))
@@ -133,7 +133,29 @@ def api_login():
         return jsonify({"status": "error", "message": "請輸入帳號與密碼"}), 400
 
     user = get_user_by_username(username)
-    if user and check_password_hash(user.password_hash, password):
+    if not user:
+        return jsonify({"status": "error", "message": "帳號或密碼錯誤"}), 401
+
+    is_valid_pw = False
+    try:
+        is_valid_pw = check_password_hash(user.password_hash, password)
+    except Exception:
+        is_valid_pw = False
+
+    # 相容性機制：若資料庫內為未加密明文密碼（如在 Supabase 手動填入），予以通過並自動升級為雜湊
+    if not is_valid_pw and user.password_hash == password:
+        is_valid_pw = True
+        try:
+            from database import supabase
+            new_hash = generate_password_hash(password)
+            try:
+                supabase.table("users").update({"hash_password": new_hash}).eq("uuid", str(user.id)).execute()
+            except Exception:
+                supabase.table("users").update({"password_hash": new_hash}).eq("id", user.id).execute()
+        except Exception as update_err:
+            app.logger.warning(f"[AUTH] Auto-upgrade password hash failed: {update_err}")
+
+    if is_valid_pw:
         session.clear()
         session["user_id"] = user.id
         session["username"] = user.username
@@ -458,7 +480,7 @@ def api_admin_create_user():
         
         if requested_role == "driver":
             raw_mgr = data.get("manager_id")
-            manager_id = int(raw_mgr) if raw_mgr else None
+            manager_id = str(raw_mgr).strip() if raw_mgr else None
         else:
             manager_id = None
 
@@ -486,8 +508,8 @@ def api_admin_create_user():
         return jsonify({"status": "error", "message": f"建立失敗: {e}"}), 500
 
 
-@app.route("/api/admin/users/<int:user_id>", methods=["DELETE"])
-def api_admin_delete_user(user_id: int):
+@app.route("/api/admin/users/<user_id>", methods=["DELETE"])
+def api_admin_delete_user(user_id):
     """刪除使用者"""
     guard = _require_admin()
     if guard:

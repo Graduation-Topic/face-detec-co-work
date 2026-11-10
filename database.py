@@ -35,21 +35,21 @@ def _response_rows(response: Any) -> List[Dict[str, Any]]:
 
 @dataclass
 class User:
-    id: int
+    id: Any  # UUID string 或 int
     username: str
     display_name: Optional[str]
     password_hash: str
     role: str
-    manager_id: Optional[int] = None
+    manager_id: Optional[Any] = None
     created_at: Optional[str] = None
 
     @classmethod
     def from_row(cls, row: Dict[str, Any]) -> "User":
         return cls(
-            id=row["id"],
-            username=row["username"],
-            display_name=row.get("display_name"),
-            password_hash=row["password_hash"],
+            id=str(row.get("uuid") or row.get("id") or ""),
+            username=str(row.get("userID") or row.get("username") or ""),
+            display_name=row.get("userName") or row.get("display_name"),
+            password_hash=str(row.get("hash_password") or row.get("password_hash") or ""),
             role=row.get("role", "driver"),
             manager_id=row.get("manager_id"),
             created_at=row.get("created_at"),
@@ -84,31 +84,73 @@ class AlertEvent:
 def init_db() -> None:
     """Verify that the required Supabase tables are available."""
     for table in ("users", "event"):
-        supabase.table(table).select("id").limit(1).execute()
+        supabase.table(table).select("*").limit(1).execute()
 
 
 def get_user_by_username(username: str) -> Optional[User]:
-    response = (
-        supabase.table("users")
-        .select("*")
-        .eq("username", username)
-        .limit(1)
-        .execute()
-    )
-    rows = _response_rows(response)
-    return User.from_row(rows[0]) if rows else None
+    # 優先比對 main 資料庫的 "userID" (camelCase)
+    try:
+        response = (
+            supabase.table("users")
+            .select("*")
+            .eq("userID", username)
+            .limit(1)
+            .execute()
+        )
+        rows = _response_rows(response)
+        if rows:
+            return User.from_row(rows[0])
+    except Exception:
+        pass
+
+    # 相容傳統的 "username"
+    try:
+        response = (
+            supabase.table("users")
+            .select("*")
+            .eq("username", username)
+            .limit(1)
+            .execute()
+        )
+        rows = _response_rows(response)
+        if rows:
+            return User.from_row(rows[0])
+    except Exception:
+        pass
+
+    return None
 
 
-def get_user_by_id(user_id: int) -> Optional[User]:
-    response = (
-        supabase.table("users")
-        .select("*")
-        .eq("id", user_id)
-        .limit(1)
-        .execute()
-    )
-    rows = _response_rows(response)
-    return User.from_row(rows[0]) if rows else None
+def get_user_by_id(user_id: Any) -> Optional[User]:
+    try:
+        response = (
+            supabase.table("users")
+            .select("*")
+            .eq("uuid", str(user_id))
+            .limit(1)
+            .execute()
+        )
+        rows = _response_rows(response)
+        if rows:
+            return User.from_row(rows[0])
+    except Exception:
+        pass
+
+    try:
+        response = (
+            supabase.table("users")
+            .select("*")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
+        rows = _response_rows(response)
+        if rows:
+            return User.from_row(rows[0])
+    except Exception:
+        pass
+
+    return None
 
 
 def create_user(
@@ -116,17 +158,37 @@ def create_user(
     password_hash: str,
     display_name: Optional[str] = None,
     role: str = "driver",
-    manager_id: Optional[int] = None,
+    manager_id: Optional[Any] = None,
 ) -> User:
-    payload: Dict[str, Any] = {
+    # 優先採用 main 庫欄位 (userID, userName, hash_password, is_active)
+    payload_main: Dict[str, Any] = {
+        "userID": username,
+        "userName": display_name or username,
+        "hash_password": password_hash,
+        "role": role,
+        "is_active": True,
+    }
+    if manager_id is not None:
+        payload_main["manager_id"] = manager_id
+
+    try:
+        response = supabase.table("users").insert(payload_main).execute()
+        rows = _response_rows(response)
+        if rows:
+            return User.from_row(rows[0])
+    except Exception:
+        pass
+
+    # 相容傳統欄位 (username, display_name, password_hash)
+    payload_legacy: Dict[str, Any] = {
         "username": username,
-        "password_hash": password_hash,
         "display_name": display_name or username,
+        "password_hash": password_hash,
         "role": role,
     }
     if manager_id is not None:
-        payload["manager_id"] = manager_id
-    response = supabase.table("users").insert(payload).execute()
+        payload_legacy["manager_id"] = manager_id
+    response = supabase.table("users").insert(payload_legacy).execute()
     rows = _response_rows(response)
     if not rows:
         raise RuntimeError("Supabase did not return the created user")
@@ -135,19 +197,22 @@ def create_user(
 
 def list_users(
     role: Optional[str] = None,
-    manager_id: Optional[int] = None,
+    manager_id: Optional[Any] = None,
 ) -> List[User]:
     query = supabase.table("users").select("*")
     if role:
         query = query.eq("role", role)
     if manager_id is not None:
         query = query.eq("manager_id", manager_id)
-    response = query.order("id", desc=False).execute()
+    response = query.order("created_at", desc=False).execute()
     return [User.from_row(r) for r in _response_rows(response)]
 
 
-def delete_user(user_id: int) -> bool:
-    supabase.table("users").delete().eq("id", user_id).execute()
+def delete_user(user_id: Any) -> bool:
+    try:
+        supabase.table("users").delete().eq("uuid", str(user_id)).execute()
+    except Exception:
+        supabase.table("users").delete().eq("id", user_id).execute()
     return True
 
 
@@ -156,6 +221,23 @@ def insert_event(data: Dict[str, Any]) -> AlertEvent:
     event_data.setdefault(
         "created_at", datetime.now(timezone.utc).isoformat()
     )
+
+    # Main 庫中 event 關聯 users 的欄位是 uuid
+    driver_val = event_data.pop("user_id", None) or event_data.get("uuid")
+    if driver_val:
+        event_data["uuid"] = str(driver_val)
+
+    # 確保布林值符合 main 庫格式
+    if "is_escalated" in event_data:
+        event_data["is_escalated"] = bool(event_data["is_escalated"])
+    if "is_new_escalation" in event_data:
+        event_data["is_new_escalation"] = bool(event_data["is_new_escalation"])
+
+    # client_timestamp 轉為 ISO string 符合 timestamptz
+    ts = event_data.get("client_timestamp")
+    if isinstance(ts, (int, float)):
+        event_data["client_timestamp"] = datetime.fromtimestamp(ts, timezone.utc).isoformat()
+
     response = supabase.table("event").insert(event_data).execute()
     rows = _response_rows(response)
     if not rows:
@@ -163,13 +245,14 @@ def insert_event(data: Dict[str, Any]) -> AlertEvent:
     return AlertEvent.from_row(rows[0])
 
 
-def list_recent_alerts(limit: int, driver_ids: Optional[List[int]] = None) -> List[AlertEvent]:
+def list_recent_alerts(limit: int, driver_ids: Optional[List[Any]] = None) -> List[AlertEvent]:
     try:
         query = supabase.table("event").select("*").order("created_at", desc=True).limit(limit)
         if driver_ids is not None:
             if not driver_ids:
                 return []
-            query = query.in_("user_id", driver_ids)
+            # Main 庫中 event 關聯駕駛員的欄位是 uuid
+            query = query.in_("uuid", [str(d) for d in driver_ids])
         response = query.execute()
         return [AlertEvent.from_row(row) for row in _response_rows(response)]
     except Exception:
