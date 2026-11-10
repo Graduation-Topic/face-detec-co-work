@@ -1,4 +1,7 @@
+import math
 import os
+import time
+from datetime import datetime, timezone
 
 # ========== 環境偵測：本地 vs Render ==========
 # Render 會自動注入 RENDER=true 環境變數；本地開發則不會有這個變數。
@@ -24,6 +27,7 @@ from database import (
     list_recent_alerts,
     list_users,
     purge_old_alerts,
+    update_user,
 )
 from state import State
 
@@ -36,6 +40,8 @@ app = Flask(
 )
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me-in-production")
+
+ALLOWED_FATIGUE_LEVELS = {"Normal", "Mild", "Severe"}
 
 state = State(fps=Config.FPS, window_sec=Config.WINDOWS_SEC)
 alert_manager = AlertManager(
@@ -146,12 +152,8 @@ def api_login():
     if not is_valid_pw and user.password_hash == password:
         is_valid_pw = True
         try:
-            from database import supabase
             new_hash = generate_password_hash(password)
-            try:
-                supabase.table("users").update({"hash_password": new_hash}).eq("uuid", str(user.id)).execute()
-            except Exception:
-                supabase.table("users").update({"password_hash": new_hash}).eq("id", user.id).execute()
+            update_user(user.id, password_hash=new_hash)
         except Exception as update_err:
             app.logger.warning(f"[AUTH] Auto-upgrade password hash failed: {update_err}")
 
@@ -279,22 +281,42 @@ def reset_state():
 @app.route("/api/alert", methods=["POST"])
 def api_record_alert():
     """接收前端嚴重警告事件，進行滑動視窗累計、通報判定，並寫入資料庫"""
+    user_uuid = session.get("user_id")
+    if not user_uuid:
+        return jsonify({"status": "error", "message": "請先登入後再開始偵測"}), 401
+
     data = request.get_json(silent=True) or {}
     session_id = data.get("session_id")
-    score = float(data.get("score", 0.0))
+    try:
+        score = float(data.get("score", 0.0))
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "message": "警告分數格式錯誤"}), 400
+    if not math.isfinite(score):
+        return jsonify({"status": "error", "message": "警告分數格式錯誤"}), 400
+
     level = str(data.get("level", "Severe"))
+    if level not in ALLOWED_FATIGUE_LEVELS:
+        return jsonify({"status": "error", "message": "疲勞等級格式錯誤"}), 400
+
     reason = str(data.get("reason", "疲勞警告"))
     count = data.get("count")
-    timestamp = data.get("timestamp")
+    client_timestamp = data.get("timestamp")
+    if client_timestamp is not None:
+        try:
+            client_timestamp = datetime.fromtimestamp(
+                float(client_timestamp), timezone.utc
+            )
+        except (TypeError, ValueError, OverflowError):
+            return jsonify({"status": "error", "message": "事件時間格式錯誤"}), 400
 
-    # 1. AlertManager 處理滑動視窗邏輯
+    # 1. AlertManager 處理滑動視窗邏輯 (使用伺服器時間防偏)
     result = alert_manager.record_alert(
         session_id=session_id,
         score=score,
         level=level,
         reason=reason,
         count=count,
-        timestamp=timestamp,
+        timestamp=time.time(),
         extra=data.get("extra"),
     )
 
@@ -305,18 +327,17 @@ def api_record_alert():
     # 3. 寫入資料庫（異常不影響主流程回應）
     try:
         event_payload = {
+            "uuid": user_uuid,
             "session_id": session_id,
             "score": score,
             "level": level,
             "reason": reason,
             "client_count": count,
             "window_count": result["window_count"],
-            "is_escalated": 1 if result["is_escalated"] else 0,
-            "is_new_escalation": 1 if result["is_new_escalation"] else 0,
-            "client_timestamp": timestamp,
+            "is_escalated": bool(result["is_escalated"]),
+            "is_new_escalation": bool(result["is_new_escalation"]),
+            "client_timestamp": client_timestamp,
         }
-        if session.get("user_id"):
-            event_payload["user_id"] = session.get("user_id")
 
         insert_event(event_payload)
 
@@ -324,7 +345,7 @@ def api_record_alert():
         try:
             purge_old_alerts()
         except Exception as purge_err:
-            app.logger.warning(f"[DB] purge_old_alerts failed (non-critical): {purge_err}")
+            app.logger.warning(f"[DB] Automatic alert cleanup failed: {purge_err}")
 
     except Exception as e:
         app.logger.error(f"[DB] Failed to save alert event: {e}")
@@ -340,7 +361,13 @@ def api_admin_alerts():
     if guard:
         return guard
 
-    limit = int(request.args.get("limit", 50))
+    try:
+        limit = int(request.args.get("limit", 50))
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "message": "顯示筆數格式錯誤"}), 400
+    if not 1 <= limit <= 50:
+        return jsonify({"status": "error", "message": "單頁最多顯示 50 筆"}), 400
+
     current_role = session.get("role")
     current_user_id = session.get("user_id")
 

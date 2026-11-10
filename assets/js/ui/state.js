@@ -186,7 +186,8 @@ function updateFatigueStatus(level, score) {
   statusEl.textContent = info.text;
   statusEl.className = info.cls;
 
-  scoreEl.textContent = score != null ? `${score}%` : "N/A";
+  scoreEl.textContent =
+    score != null ? `${Number(score).toFixed(1)}%` : "N/A";
 }
 
 function fetchData() {

@@ -118,20 +118,14 @@
                 </div>
                 <div class="stat-card">
                   <div class="stat-label">資料保留天數</div>
-                  <div class="stat-value" id="stat-retention">—</div>
+                  <div class="stat-value" id="stat-retention">7 天</div>
                   <div class="stat-sub">超過自動刪除</div>
                 </div>
               </div>
 
               <div class="action-bar">
-                <button id="btn-refresh" class="dash-btn dash-btn-default">
-                  重新整理
-                </button>
                 <button id="btn-reset" class="dash-btn dash-btn-warning">
                   重置警報視窗
-                </button>
-                <button id="btn-purge" class="dash-btn dash-btn-danger">
-                  清理過期資料
                 </button>
               </div>
 
@@ -147,7 +141,6 @@
                     >
                       <option value="25">顯示 25 筆</option>
                       <option value="50" selected>顯示 50 筆</option>
-                      <option value="100">顯示 100 筆</option>
                     </select>
                     <svg
                       class="limit-chevron"
@@ -173,18 +166,17 @@
                   <table class="alert-table">
                     <thead>
                       <tr>
-                        <th>#</th>
                         <th>時間</th>
-                        <th>Session ID</th>
+                        <th>userID</th>
                         <th>原因</th>
                         <th>疲勞分數</th>
                         <th>視窗計數</th>
-                        <th>升級通報</th>
+                        <th>通報</th>
                       </tr>
                     </thead>
                     <tbody id="alert-tbody">
                       <tr>
-                        <td colspan="7" class="table-empty">載入中…</td>
+                        <td colspan="6" class="table-empty">載入中…</td>
                       </tr>
                     </tbody>
                   </table>

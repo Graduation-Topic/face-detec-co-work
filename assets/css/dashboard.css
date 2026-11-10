@@ -101,11 +101,35 @@
 }
 
 body.dashboard-loading .dash-content {
-  visibility: hidden;
+  visibility: visible;
 }
 
 body.dashboard-loading #access-identity {
   visibility: hidden;
+}
+
+body.dashboard-loading .stat-value,
+body.dashboard-loading .stat-sub,
+body.dashboard-loading #alert-tbody {
+  color: transparent;
+  background: #151515;
+  background: linear-gradient(110deg, #151515 8%, #292929 18%, #151515 33%);
+  background-size: 200% 100%;
+  animation: dashboard-loading-shimmer 1.5s linear infinite;
+}
+
+body.dashboard-loading #alert-tbody {
+  color: transparent;
+  border-radius: 4px;
+}
+
+@keyframes dashboard-loading-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
 }
 
 .dash-main[hidden] {
