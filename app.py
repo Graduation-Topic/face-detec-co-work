@@ -171,6 +171,12 @@ def api_login():
     return jsonify({"status": "error", "message": "帳號或密碼錯誤"}), 401
 
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
 @app.route("/api/auth/logout", methods=["POST"])
 def api_logout():
     session.clear()
