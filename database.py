@@ -10,7 +10,14 @@ database.py - 混合架構資料庫模組 (Hybrid Database Module)
 import os
 from datetime import datetime, timezone
 from dataclasses import dataclass
-from typing import Any, Dict, List, LiteralString, Optional, cast
+from typing import Any, Dict, List, Optional, cast
+try:
+    from typing import LiteralString
+except ImportError:
+    try:
+        from typing_extensions import LiteralString
+    except ImportError:
+        LiteralString = str  # type: ignore
 
 # PostgreSQL 原生連線驅動
 import psycopg
@@ -25,6 +32,13 @@ except ImportError:
 
 
 # ========== 環境變數載入 ==========
+
+if os.environ.get("RENDER") != "true":
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
 
 SUPABASE_DIRECT_CONNECTION_URL = os.environ.get("SUPABASE_DIRECT_CONNECTION_URL", "").strip()
 SUPABASE_PROJECT_URL = os.environ.get("SUPABASE_PROJECT_URL", "").strip()
@@ -72,6 +86,10 @@ class User:
     role: str
     is_active: bool = True
     manager_id: Optional[str] = None
+    line_token: Optional[str] = None
+    line_user_id: Optional[str] = None
+    line_notify_enabled: bool = True
+    line_notify_all: bool = True
     created_at: Optional[Any] = None
     updated_at: Optional[Any] = None
 
@@ -85,6 +103,10 @@ class User:
             role=str(row.get("role") or "driver"),
             is_active=bool(row.get("is_active", True)),
             manager_id=str(row["manager_id"]) if row.get("manager_id") else None,
+            line_token=row.get("line_token"),
+            line_user_id=row.get("line_user_id"),
+            line_notify_enabled=bool(row.get("line_notify_enabled", True)),
+            line_notify_all=bool(row.get("line_notify_all", True)),
             created_at=row.get("created_at"),
             updated_at=row.get("updated_at"),
         )
@@ -117,6 +139,11 @@ class User:
             "role": self.role,
             "is_active": self.is_active,
             "manager_id": self.manager_id,
+            "line_token": self.line_token,
+            "line_user_id": self.line_user_id,
+            "has_line": bool(self.line_user_id and self.line_user_id.strip()),
+            "line_notify_enabled": self.line_notify_enabled,
+            "line_notify_all": self.line_notify_all,
             "created_at": str(self.created_at) if self.created_at else None,
             "updated_at": str(self.updated_at) if self.updated_at else None,
         }
@@ -159,14 +186,19 @@ def init_db() -> None:
 
 # ========== 使用者操作 (User Operations) ==========
 
+USER_COLUMNS_SQL = """
+    uuid, "userID", "userName", hash_password, role, is_active, manager_id,
+    line_token, line_user_id, line_notify_enabled, line_notify_all, created_at, updated_at
+"""
+
 def get_user_by_username(username: str) -> Optional[User]:
     """依帳號名稱查詢已啟用的使用者"""
     if is_direct_db_configured():
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """
-                    SELECT uuid, "userID", "userName", hash_password, role, is_active, manager_id, created_at, updated_at
+                    f"""
+                    SELECT {USER_COLUMNS_SQL}
                     FROM public.users
                     WHERE "userID" = %s
                       AND is_active = TRUE
@@ -197,8 +229,8 @@ def get_user_by_id(user_id: Any) -> Optional[User]:
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """
-                    SELECT uuid, "userID", "userName", hash_password, role, is_active, manager_id, created_at, updated_at
+                    f"""
+                    SELECT {USER_COLUMNS_SQL}
                     FROM public.users
                     WHERE uuid::text = %s OR "userID" = %s
                     LIMIT 1
@@ -224,12 +256,15 @@ def get_user_by_id(user_id: Any) -> Optional[User]:
 def list_users(
     role: Optional[str] = None,
     manager_id: Optional[Any] = None,
+    include_inactive: bool = False,
 ) -> List[User]:
-    """列出使用者（支援依角色與所屬主管 manager_id 篩選）"""
+    """列出使用者（支援依角色與所屬主管 manager_id 篩選，可指定是否包含停用帳號）"""
     mgr_str = str(manager_id).strip() if manager_id else None
 
     if is_direct_db_configured():
-        conditions = ["is_active = TRUE"]
+        conditions = []
+        if not include_inactive:
+            conditions.append("is_active = TRUE")
         params: List[Any] = []
         if role:
             conditions.append("role = %s")
@@ -238,9 +273,9 @@ def list_users(
             conditions.append("manager_id::text = %s")
             params.append(mgr_str)
 
-        where_clause = " WHERE " + " AND ".join(conditions)
+        where_clause = (" WHERE " + " AND ".join(conditions)) if conditions else ""
         query = f"""
-            SELECT uuid, "userID", "userName", hash_password, role, is_active, manager_id, created_at, updated_at
+            SELECT {USER_COLUMNS_SQL}
             FROM public.users
             {where_clause}
             ORDER BY created_at ASC
@@ -252,6 +287,8 @@ def list_users(
         return [User.from_row(row) for row in rows]
     elif supabase:
         query = supabase.table("users").select("*")
+        if not include_inactive:
+            query = query.eq("is_active", True)
         if role:
             query = query.eq("role", role)
         if mgr_str:
@@ -267,21 +304,25 @@ def create_user(
     display_name: Optional[str] = None,
     role: str = "driver",
     manager_id: Optional[Any] = None,
+    line_token: Optional[str] = None,
+    line_user_id: Optional[str] = None,
 ) -> User:
     """建立新使用者"""
     d_name = display_name or username
     mgr_val = str(manager_id).strip() if manager_id else None
+    l_tok = str(line_token).strip() if line_token else None
+    l_uid = str(line_user_id).strip() if line_user_id else None
 
     if is_direct_db_configured():
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """
-                    INSERT INTO public.users ("userID", "userName", hash_password, role, is_active, manager_id)
-                    VALUES (%s, %s, %s, %s, TRUE, %s)
-                    RETURNING uuid, "userID", "userName", hash_password, role, is_active, manager_id, created_at, updated_at
+                    f"""
+                    INSERT INTO public.users ("userID", "userName", hash_password, role, is_active, manager_id, line_token, line_user_id)
+                    VALUES (%s, %s, %s, %s, TRUE, %s, %s, %s)
+                    RETURNING {USER_COLUMNS_SQL}
                     """,
-                    (username, d_name, password_hash, role, mgr_val),
+                    (username, d_name, password_hash, role, mgr_val, l_tok, l_uid),
                 )
                 row = cursor.fetchone()
         if row is None:
@@ -297,6 +338,10 @@ def create_user(
         }
         if mgr_val:
             payload["manager_id"] = mgr_val
+        if l_tok:
+            payload["line_token"] = l_tok
+        if l_uid:
+            payload["line_user_id"] = l_uid
         res = supabase.table("users").insert(payload).execute()
         rows = _response_rows(res)
         if not rows:
@@ -312,8 +357,12 @@ def update_user(
     manager_id: Optional[Any] = None,
     password_hash: Optional[str] = None,
     is_active: Optional[bool] = None,
+    line_token: Optional[str] = None,
+    line_user_id: Optional[str] = None,
+    line_notify_enabled: Optional[bool] = None,
+    line_notify_all: Optional[bool] = None,
 ) -> Optional[User]:
-    """更新使用者資料"""
+    """更新使用者資料（總管理員修改全部帳號資料 / 使用者修改個人設定）"""
     uid_str = str(user_id).strip()
     if is_direct_db_configured():
         set_clauses = ['updated_at = NOW()']
@@ -325,7 +374,8 @@ def update_user(
             set_clauses.append("role = %s")
             params.append(role)
         if manager_id is not None:
-            mgr_val = str(manager_id).strip() if manager_id else None
+            # 支援傳入空字串或 None 清除主管
+            mgr_val = str(manager_id).strip() if (manager_id and str(manager_id).strip()) else None
             set_clauses.append("manager_id = %s")
             params.append(mgr_val)
         if password_hash is not None:
@@ -334,13 +384,27 @@ def update_user(
         if is_active is not None:
             set_clauses.append("is_active = %s")
             params.append(bool(is_active))
+        if line_token is not None:
+            tok_val = str(line_token).strip() if (line_token and str(line_token).strip()) else None
+            set_clauses.append("line_token = %s")
+            params.append(tok_val)
+        if line_user_id is not None:
+            uid_val = str(line_user_id).strip() if (line_user_id and str(line_user_id).strip()) else None
+            set_clauses.append("line_user_id = %s")
+            params.append(uid_val)
+        if line_notify_enabled is not None:
+            set_clauses.append("line_notify_enabled = %s")
+            params.append(bool(line_notify_enabled))
+        if line_notify_all is not None:
+            set_clauses.append("line_notify_all = %s")
+            params.append(bool(line_notify_all))
 
         params.append(uid_str)
         sql_query = f"""
             UPDATE public.users
             SET {', '.join(set_clauses)}
             WHERE uuid::text = %s
-            RETURNING uuid, "userID", "userName", hash_password, role, is_active, manager_id, created_at, updated_at
+            RETURNING {USER_COLUMNS_SQL}
         """
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
@@ -354,11 +418,19 @@ def update_user(
         if role is not None:
             patch["role"] = role
         if manager_id is not None:
-            patch["manager_id"] = str(manager_id).strip() if manager_id else None
+            patch["manager_id"] = str(manager_id).strip() if (manager_id and str(manager_id).strip()) else None
         if password_hash is not None:
             patch["hash_password"] = password_hash
         if is_active is not None:
             patch["is_active"] = bool(is_active)
+        if line_token is not None:
+            patch["line_token"] = str(line_token).strip() if (line_token and str(line_token).strip()) else None
+        if line_user_id is not None:
+            patch["line_user_id"] = str(line_user_id).strip() if (line_user_id and str(line_user_id).strip()) else None
+        if line_notify_enabled is not None:
+            patch["line_notify_enabled"] = bool(line_notify_enabled)
+        if line_notify_all is not None:
+            patch["line_notify_all"] = bool(line_notify_all)
         res = supabase.table("users").update(patch).eq("uuid", uid_str).execute()
         rows = _response_rows(res)
         return User.from_row(rows[0]) if rows else None

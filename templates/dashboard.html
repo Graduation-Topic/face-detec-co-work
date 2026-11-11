@@ -27,6 +27,7 @@
     <script src="/assets/js/ui/session-browser.js"></script>
     <script src="/assets/js/ui/dashboard-page-switch.js" defer></script>
     <script src="/assets/js/ui/manage-users.js" defer></script>
+    <script src="/assets/js/ui/dashboard-settings.js" defer></script>
   </head>
 
   <body class="dashboard-loading">
@@ -299,13 +300,14 @@
                           <th class="manage-display-name">姓名</th>
                           <th class="manage-role">身分</th>
                           <th class="manage-manager">主管</th>
+                          <th >Line</th>
                           <th class="manage-created-at">建立時間</th>
                           <th class="manage-actions">操作</th>
                         </tr>
                       </thead>
                       <tbody id="manage-user-tbody">
                         <tr>
-                          <td colspan="7" class="table-empty">載入中...</td>
+                          <td colspan="8" class="table-empty">載入中...</td>
                         </tr>
                       </tbody>
                     </table>
@@ -325,18 +327,20 @@
                     <div class="sec-setting-lft">
                       <span>帳號資訊</span>
                     </div>
-                    <div class="sec-setting-rgt"></div>
+                    <div class="sec-setting-rgt">
+                      <span id="settings-user-info" style="font-size:13px; color:var(--color-text-secondary);">載入中…</span>
+                    </div>
                   </div>
                 </div>
                 <div class="setting-h">
                   <label for="setting-api">串接</label>
                   <div class="sec-setting" data-setting="api">
                     <div class="sec-setting-lft">
-                      <span>Line API</span>
+                      <span>Line Messaging API</span>
                     </div>
-                    <div class="sec-setting-rgt">
-                      <button class="status-badge inactive">未連接</button>
-                      <button class="edit-setting-btn cursor-pointer">
+                    <div class="sec-setting-rgt" style="display:flex; align-items:center; gap:8px;">
+                      <button id="line-api-status-badge" class="status-badge inactive cursor-pointer" title="點擊設定 LINE">未連接</button>
+                      <button id="btn-open-line-modal" class="edit-setting-btn cursor-pointer" title="編輯 LINE 設定">
                         <svg
                           width="100%"
                           height="100%"
@@ -371,10 +375,13 @@
                   </div>
                   <div class="sec-setting" data-setting="notify-line">
                     <div class="sec-setting-lft">
-                      <span>Line</span>
+                      <span>Line 推播通知</span>
                     </div>
                     <div class="sec-setting-rgt">
-                      <button class="status-badge inactive">未連接</button>
+                      <label class="setting-switch" data-setting="notify-line">
+                        <input type="checkbox" id="line-notify-toggle" />
+                        <span class="switch-slider"></span>
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -532,7 +539,79 @@
               </svg>
             </div>
           </div>
-          <div id="add-user-error" class="dash-msg dash-msg-error hidden"></div>
+          <div class="modal-form-group" id="group-edit-active">
+            <label for="select-edit-active">帳號啟用狀態</label>
+            <select id="select-edit-active">
+              <option value="true">✅ 正常啟用</option>
+              <option value="false">⛔ 停用帳號</option>
+            </select>
+          </div>
+          <div class="modal-form-group">
+            <label for="inp-edit-line-id">LINE User ID / Group ID (選填)</label>
+            <input type="text" id="inp-edit-line-id" placeholder="例如：U1234567890abcdef..." />
+          </div>
+          <div class="modal-form-group" id="group-edit-line-token">
+            <label for="inp-edit-line-token">專屬 Channel Access Token (選填)</label>
+            <input type="password" id="inp-edit-line-token" placeholder="留空不更動，輸入空格可清空" />
+            <small id="edit-token-hint" style="color:var(--color-text-secondary);font-size:11px;margin-top:2px;"></small>
+          </div>
+          <div class="modal-form-group" style="flex-direction:row; align-items:center; justify-content:space-between; margin-top:8px;">
+            <label for="chk-edit-line-enabled" style="margin:0; cursor:pointer;">接收疲勞通報推播</label>
+            <input type="checkbox" id="chk-edit-line-enabled" style="width:20px; height:20px; cursor:pointer;" />
+          </div>
+          <div class="modal-form-group" id="group-edit-line-all" style="flex-direction:row; align-items:center; justify-content:space-between; margin-top:4px;">
+            <label for="chk-edit-line-all" style="margin:0; cursor:pointer;">接收所有車隊通報 (全域總覽)</label>
+            <input type="checkbox" id="chk-edit-line-all" style="width:20px; height:20px; cursor:pointer;" />
+          </div>
+          <div id="edit-user-error" class="dash-msg dash-msg-error hidden"></div>
+          <div class="dash-modal-footer">
+            <button type="button" id="btn-cancel-edit-modal" class="btn-modal-cancel cursor-pointer">取消</button>
+            <button type="submit" id="btn-submit-edit-modal" class="btn-modal-submit cursor-pointer">儲存修改</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 個人 LINE 串接設定彈窗 Modal -->
+    <div id="line-settings-modal" class="dash-modal hidden">
+      <div class="dash-modal-backdrop" id="line-modal-backdrop"></div>
+      <div class="dash-modal-box" style="max-width: 480px;">
+        <div class="dash-modal-header">
+          <h2 class="dash-modal-title">LINE Messaging API 設定</h2>
+          <button type="button" id="btn-close-line-modal" class="btn-close-modal cursor-pointer" aria-label="關閉">&times;</button>
+        </div>
+        <form id="line-settings-form" autocomplete="off">
+          <div class="modal-form-group">
+            <label for="inp-my-line-id">LINE User ID / Group ID *</label>
+            <input type="text" id="inp-my-line-id" placeholder="例如：U1234567890abcdef..." />
+            <small style="color:var(--color-text-secondary);font-size:12px;margin-top:2px;">
+              可在 LINE Developers 後台、或透過專屬查詢 Bot 取得您的 User ID (U 開頭共 33 字元)。
+            </small>
+          </div>
+          <div class="modal-form-group">
+            <label for="inp-my-line-token">專屬 Channel Access Token (選填)</label>
+            <input type="password" id="inp-my-line-token" placeholder="留空則使用系統預設 Token" />
+            <small id="token-status-hint" style="color:var(--color-text-secondary);font-size:12px;margin-top:2px;"></small>
+          </div>
+          <div class="modal-form-group" style="flex-direction:row; align-items:center; justify-content:space-between; margin-top:10px;">
+            <label for="chk-my-line-enabled" style="margin:0; cursor:pointer;">接收疲勞通報推播</label>
+            <input type="checkbox" id="chk-my-line-enabled" style="width:20px; height:20px; cursor:pointer;" />
+          </div>
+          <div class="modal-form-group hidden" id="group-my-line-all" style="flex-direction:row; align-items:center; justify-content:space-between; margin-top:6px;">
+            <label for="chk-my-line-all" style="margin:0; cursor:pointer;">接收所有車隊通報 (全域總覽)</label>
+            <input type="checkbox" id="chk-my-line-all" style="width:20px; height:20px; cursor:pointer;" />
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:14px; border-top:1px solid var(--color-border);">
+            <button type="button" id="btn-test-line-push" class="dash-btn cursor-pointer" style="font-size:12px; padding:6px 12px; background:rgba(52,199,89,0.15); color:#34c759; border:1px solid rgba(52,199,89,0.3);">
+              發送測試訊息
+            </button>
+            <span id="line-test-feedback" style="font-size:12px; color:var(--color-text-secondary); flex:1; margin-left:10px; text-align:right;"></span>
+          </div>
+
+          <div id="line-settings-error" class="dash-msg dash-msg-error hidden" style="margin-top:12px;"></div>
+          <div id="line-settings-success" class="dash-msg dash-msg-success hidden" style="margin-top:12px;"></div>
+
           <div class="dash-modal-footer">
             <button
               type="button"

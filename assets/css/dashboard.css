@@ -635,6 +635,22 @@ body.dashboard-loading #alert-tbody {
   color: var(--color-success);
 }
 
+.btn-user-edit {
+  padding: 4px 10px;
+  font-size: 12px;
+  background-color: rgba(10, 132, 255, 0.12);
+  color: #0a84ff;
+  border: 1px solid rgba(10, 132, 255, 0.25);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  margin-right: 6px;
+  cursor: pointer;
+}
+.btn-user-edit:hover {
+  background-color: rgba(10, 132, 255, 0.25);
+  border-color: #0a84ff;
+}
+
 .btn-user-delete {
   display: flex;
   width: 24px;
@@ -653,6 +669,26 @@ body.dashboard-loading #alert-tbody {
 .btn-user-delete svg {
   width: 16px;
   aspect-ratio: 1/1;
+}
+
+.line-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+.line-badge.bound {
+  background-color: rgba(52, 199, 89, 0.12);
+  color: #34c759;
+  border: 1px solid rgba(52, 199, 89, 0.25);
+}
+.line-badge.unbound {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
 }
 
 /* Modal */

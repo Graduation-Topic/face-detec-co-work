@@ -43,7 +43,7 @@
       try {
         const response = await window.fetch("/api/auth/me", { cache: "no-store" });
         const me = await response.json();
-        if (!me.logged_in || !["admin", "developer"].includes(me.role)) {
+        if (!me.logged_in || !["admin", "developer", "super_admin"].includes(me.role)) {
           window.location.replace(me.logged_in ? "/demo" : "/login");
         }
       } catch (error) {
