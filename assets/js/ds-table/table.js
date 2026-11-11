@@ -66,12 +66,12 @@ function shortId(sid) {
       .map(
         (a) => `
         <tr class="${a.is_new_escalation ? "row-escalated" : ""}">
-          <td>${formatTime(a.created_at)}</td>
-          <td>${a.user_id || a.userName || a.userID || "—"}</td>
-          <td>${a.reason || "—"}</td>
-          <td>${a.score != null ? Number(a.score).toFixed(1) : "—"}</td>
-          <td>${a.window_count ?? "—"}</td>
-          <td class="${a.is_escalated ? "cell-danger" : "cell-ok"}">
+          <td class="alert-time">${formatTime(a.created_at)}</td>
+          <td class="alert-user-id">${a.user_id || a.userName || a.userID || "—"}</td>
+          <td class="alert-reason">${a.reason || "—"}</td>
+          <td class="alert-score">${a.score != null ? Number(a.score).toFixed(1) : "—"}</td>
+          <td class="alert-window-count">${a.window_count ?? "—"}</td>
+          <td class="alert-escalated ${a.is_escalated ? "cell-danger" : "cell-ok"}">
             ${a.is_escalated ? "是" : "正常"}
           </td>
         </tr>
@@ -108,19 +108,18 @@ $("btn-logout").addEventListener("click", async (event) => {
     const res = await fetch("/api/auth/me");
     const me = await res.json();
 
-    if (!res.ok || !me.logged_in || !["admin", "super_admin"].includes(me.role)) {
+    if (!res.ok || !me.logged_in || !["admin", "developer"].includes(me.role)) {
       window.location.href = "/login";
       return;
     }
 
     const roleLabels = {
-      super_admin: "總管理員",
-      admin: "車隊管理員",
-      driver: "駕駛員",
+      developer: "開發者",
+      admin: "管理員",
+      driver: "駕駛",
       employee: "員工",
     };
-    const roleTag = roleLabels[me.role] ? ` (${roleLabels[me.role]})` : "";
-    $("access-identity").textContent = (me.display_name || me.username) + roleTag;
+    $("access-identity").textContent = roleLabels[me.role] || me.role || "";
     await loadData();
     document.body.classList.remove("dashboard-loading");
     setInterval(loadData, 5000);

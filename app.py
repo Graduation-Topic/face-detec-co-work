@@ -57,9 +57,8 @@ init_db()
 # ========== 工具函式 ==========
 
 def _require_admin():
-    """若 session 不是 admin 或 super_admin，回傳 401 JSON；否則回傳 None（代表通過）"""
     role = session.get("role")
-    if role not in ("admin", "super_admin"):
+    if role not in ("admin", "developer"):
         return jsonify({"status": "error", "message": "請先以管理員身份登入"}), 401
     return None
 
@@ -86,7 +85,7 @@ def demo():
 @app.route("/login")
 @app.route("/login.html")
 def login():
-    if session.get("role") in ("admin", "super_admin"):
+    if session.get("role") in ("admin", "developer"):
         return redirect(url_for("dashboard", page="overview"))
     elif session.get("role") == "driver":
         return redirect(url_for("demo"))
@@ -108,7 +107,7 @@ def docs():
 @app.route("/dashboard.html")
 @app.route("/dashboard/<page>")
 def dashboard(page="overview"):
-    if session.get("role") not in ("admin", "super_admin"):
+    if session.get("role") not in ("admin", "developer"):
         return redirect(url_for("login"))
     allowed_pages = [
         "overview",
@@ -379,7 +378,7 @@ def api_admin_alerts():
 
     driver_ids = None
     if current_role == "admin":
-        # 一般管理員只能查看自己名下駕駛員的警報
+        # 一般管理員只能查看自己名下駕駛的警報
         try:
             my_drivers = list_users(role="driver", manager_id=current_user_id)
             driver_ids = [d.id for d in my_drivers]
@@ -420,16 +419,16 @@ def api_admin_list_users():
         try:
             for m in list_users(role="admin"):
                 managers_dict[m.id] = m.display_name or m.username
-            for m in list_users(role="super_admin"):
+            for m in list_users(role="developer"):
                 managers_dict[m.id] = m.display_name or m.username
         except Exception:
             pass
 
-        if current_role == "super_admin":
-            # 總管理員可以看到所有使用者
+        if current_role == "developer":
+            # 開發者可以看到所有使用者
             users = list_users()
         else:
-            # 一般管理員只能看到自己名下的駕駛員
+            # 一般管理員只能看到自己名下的駕駛
             users = list_users(role="driver", manager_id=current_user_id)
 
         user_list = []
@@ -438,7 +437,7 @@ def api_admin_list_users():
             if u.manager_id:
                 item["manager_name"] = managers_dict.get(u.manager_id, f"管理員 #{u.manager_id}")
             else:
-                item["manager_name"] = "無 (直屬/管理者)"
+                item["manager_name"] = "無"
             user_list.append(item)
 
         return jsonify({
@@ -454,14 +453,14 @@ def api_admin_list_users():
 
 @app.route("/api/admin/managers", methods=["GET"])
 def api_admin_list_managers():
-    """獲取所有管理員列表（供總管理員指派所屬主管使用）"""
+    """獲取所有管理員列表（供開發者指派所屬主管使用）"""
     guard = _require_admin()
     if guard:
         return guard
 
     try:
         admins = list_users(role="admin")
-        supers = list_users(role="super_admin")
+        supers = list_users(role="developer")
         all_mgrs = admins + supers
         return jsonify({
             "status": "success",
@@ -481,7 +480,6 @@ def api_admin_list_managers():
 
 @app.route("/api/admin/users", methods=["POST"])
 def api_admin_create_user():
-    """建立新使用者 (模式 A: 後台管理員開通)"""
     guard = _require_admin()
     if guard:
         return guard
@@ -502,12 +500,12 @@ def api_admin_create_user():
         return jsonify({"status": "error", "message": "密碼長度至少需 4 個字元"}), 400
 
     # 權限驗證與角色分配
-    if current_role != "super_admin":
+    if current_role != "developer":
         # 一般管理員只能建立 driver，且 manager_id 強制為當前登入者
         requested_role = "driver"
         manager_id = current_user_id
     else:
-        # 總管理員可以建立 admin 或 driver
+        # 開發者可以建立 admin 或 driver
         if requested_role not in ("admin", "driver"):
             requested_role = "driver"
         
@@ -560,7 +558,7 @@ def api_admin_delete_user(user_id):
             return jsonify({"status": "error", "message": "找不到該使用者"}), 404
 
         # 權限驗證：一般管理員只能刪除自己管轄名下的 driver
-        if current_role != "super_admin":
+        if current_role != "developer":
             if target.role != "driver" or target.manager_id != current_user_id:
                 return jsonify({"status": "error", "message": "您無權刪除此員工"}), 403
 

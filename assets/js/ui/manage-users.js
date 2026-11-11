@@ -1,6 +1,6 @@
 /**
  * manage-users.js — 後台「員工管理」模組 (RBAC 角色管理)
- * 支援：總管理員 (可檢視/建立所有人員與一般管理員) 與 一般管理員 (僅檢視/建立自己名下的駕駛員)
+ * 支援：開發者 (可檢視/建立所有人員與管理員) 與 一般管理員 (僅檢視/建立自己名下的駕駛)
  */
 
 (function () {
@@ -32,13 +32,13 @@
   }
 
   function getRoleBadge(role) {
-    if (role === "super_admin") {
-      return '<span class="role-badge role-badge-super">總管理員</span>';
+    if (role === "developer") {
+      return '<span class="role-badge role-badge-developer">開發者</span>';
     }
     if (role === "admin") {
       return '<span class="role-badge role-badge-admin">管理員</span>';
     }
-    return '<span class="role-badge role-badge-driver">駕駛員</span>';
+    return '<span class="role-badge role-badge-driver">駕駛</span>';
   }
 
   // ===== 載入使用者清單 =====
@@ -79,9 +79,9 @@
     }
   }
 
-  // ===== 載入管理員清單 (供總管理員指派所屬主管) =====
+  // ===== 載入管理員清單 (供開發者指派所屬主管) =====
   async function loadManagers() {
-    if (currentRole !== "super_admin") return;
+    if (currentRole !== "developer") return;
     try {
       const res = await fetch("/api/admin/managers");
       if (!res.ok) return;
@@ -90,11 +90,11 @@
 
       const selectMgr = $("select-new-manager");
       if (selectMgr) {
-        selectMgr.innerHTML = '<option value="">(無 / 直屬總管理員)</option>';
+        selectMgr.innerHTML = '<option value="">無</option>';
         allManagers.forEach((m) => {
           const opt = document.createElement("option");
           opt.value = m.id;
-          opt.textContent = `${m.display_name || m.username} (${m.role === "super_admin" ? "總管理員" : "管理員"})`;
+          opt.textContent = `${m.display_name || m.username} (${m.role === "developer" ? "開發者" : "管理員"})`;
           selectMgr.appendChild(opt);
         });
       }
@@ -107,12 +107,11 @@
     const groupManager = $("group-new-manager");
     const selectRole = $("select-new-role");
 
-    if (currentRole === "super_admin") {
+    if (currentRole === "developer") {
       if (groupRole) groupRole.classList.remove("hidden");
       if (groupManager) groupManager.classList.remove("hidden");
       loadManagers();
     } else {
-      // 一般管理員只能建 driver，隱藏選擇角色與主管
       if (groupRole) groupRole.classList.add("hidden");
       if (groupManager) groupManager.classList.add("hidden");
       if (selectRole) selectRole.value = "driver";
@@ -134,23 +133,27 @@
       .map((u) => {
         const isSelf = u.id === currentUserId;
         const canDelete =
-          currentRole === "super_admin"
+          currentRole === "developer"
             ? !isSelf
             : u.role === "driver" && u.manager_id === currentUserId;
 
         const actionBtn = canDelete
-          ? `<button class="btn-user-delete cursor-pointer" data-id="${u.id}" data-name="${u.display_name || u.username}">刪除</button>`
+          ? `<button type="button" class="btn-user-delete cursor-pointer" data-id="${u.id}" data-name="${u.display_name || u.username}" aria-label="刪除 ${u.display_name || u.username}" title="刪除">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M21 5h-5v-.25A2.755 2.755 0 0 0 13.25 2h-2.5A2.755 2.755 0 0 0 8 4.75V5H3v1.5h1v12.75A2.755 2.755 0 0 0 6.75 22h10.5A2.755 2.755 0 0 0 20 19.25V6.5h1V5ZM9.5 4.75c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25V5h-5v-.25Zm9 14.5c0 .69-.56 1.25-1.25 1.25H6.75c-.69 0-1.25-.56-1.25-1.25V6.5h13v12.75Zm-8-9.75H9v8h1.5v-8Zm3 0H15v8h-1.5v-8Z" fill="#ff453a"/>
+              </svg>
+            </button>`
           : '<span style="color:var(--color-text-muted);font-size:12px;">—</span>';
 
         return `
           <tr>
-            <td>${u.id}</td>
-            <td><strong>${u.username}</strong></td>
-            <td>${u.display_name || "—"}</td>
-            <td>${getRoleBadge(u.role)}</td>
-            <td>${u.manager_name || "—"}</td>
-            <td>${formatTime(u.created_at)}</td>
-            <td>${actionBtn}</td>
+            <td class="manage-user-id">${u.id}</td>
+            <td class="manage-username"><strong>${u.username}</strong></td>
+            <td class="manage-display-name">${u.display_name || "—"}</td>
+            <td class="manage-role">${getRoleBadge(u.role)}</td>
+            <td class="manage-manager">${u.manager_name || "—"}</td>
+            <td class="manage-created-at">${formatTime(u.created_at)}</td>
+            <td class="manage-actions">${actionBtn}</td>
           </tr>
         `;
       })
@@ -168,7 +171,7 @@
 
   // ===== 刪除員工 =====
   async function deleteUser(id, name) {
-    if (!confirm(`確定要刪除員工帳號「${name}」(ID: ${id}) 嗎？此操作無法復原。`)) {
+    if (!confirm(`確定刪除帳號「${name}」(ID: ${id})？`)) {
       return;
     }
 
@@ -319,7 +322,9 @@
     }
   });
 
-  const manageLink = document.querySelector('.dash-bookmark [dash-page="manage"]');
+  const manageLink = document.querySelector(
+    '.dash-bookmark [dash-page="manage"]',
+  );
   if (manageLink) {
     manageLink.addEventListener("click", () => {
       setTimeout(loadUsers, 50);
@@ -329,4 +334,3 @@
   // 初始載入
   loadUsers();
 })();
-

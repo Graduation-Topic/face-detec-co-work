@@ -2,9 +2,9 @@
   "use strict";
 
   const roleLabels = {
-    super_admin: "總管理員",
-    admin: "車隊管理員",
-    driver: "駕駛員",
+    developer: "開發者",
+    admin: "管理員",
+    driver: "駕駛",
     employee: "員工",
   };
 
@@ -17,19 +17,17 @@
       const navRgts = document.querySelectorAll(".nav-rgt");
 
       navRgts.forEach((navRgt) => {
-        // 若為儀表板頁面自身管理的導航欄，則不重複處理
         if (navRgt.closest(".dash-nav-inner")) return;
 
         if (me.logged_in) {
-          const roleTag = roleLabels[me.role] ? ` (${roleLabels[me.role]})` : "";
-          const identityText = (me.display_name || me.username) + roleTag;
+          const identityText = roleLabels[me.role] || me.role || "";
 
           let extraLinkHtml = "";
           const currentPath = window.location.pathname;
 
-          if (me.role === "admin" || me.role === "super_admin") {
+          if (me.role === "admin" || me.role === "developer") {
             if (!currentPath.startsWith("/dashboard")) {
-              extraLinkHtml = `<a class="nav-link-a user-select-none cursor-pointer" href="/dashboard/overview">管理後台</a>`;
+              extraLinkHtml = `<a class="nav-link-a user-select-none cursor-pointer" href="/dashboard/overview">後台管理</a>`;
             }
           } else {
             if (!currentPath.startsWith("/demo")) {
