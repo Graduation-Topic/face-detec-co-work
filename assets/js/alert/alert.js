@@ -41,7 +41,7 @@ function initializeAlert() {
 
     if (Number(data.faces ?? 0) === 0) {
       messageText.textContent = "未偵測到臉";
-      message.style.background = "rgba(108, 117, 125, 0.9)";
+      message.style.background = "rgba(108, 117, 125, 0.4)";
       message.classList.remove("hidden");
       overlay.classList.add("active");
       return;
