@@ -12,7 +12,8 @@ if not IS_RENDER:
     from dotenv import load_dotenv
     load_dotenv()
 
-from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, session, url_for
+from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, url_for
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from alert_manager import AlertManager
@@ -40,6 +41,8 @@ app = Flask(
 )
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me-in-production")
+auth_serializer = URLSafeTimedSerializer(app.secret_key, salt="face-detection-auth")
+AUTH_TOKEN_MAX_AGE = 86400
 
 ALLOWED_FATIGUE_LEVELS = {"Normal", "Mild", "Severe"}
 
@@ -57,10 +60,31 @@ init_db()
 # ========== 工具函式 ==========
 
 def _require_admin():
-    role = session.get("role")
+    identity = _get_identity()
+    role = identity.get("role") if identity else None
     if role not in ("admin", "developer"):
         return jsonify({"status": "error", "message": "請先以管理員身份登入"}), 401
     return None
+
+
+def _get_identity():
+    """取得目前分頁的登入身份，不使用跨分頁共用的 Flask session cookie。"""
+    authorization = request.headers.get("Authorization", "")
+    if not authorization.startswith("Bearer "):
+        return None
+
+    token = authorization[7:].strip()
+    if not token:
+        return None
+
+    try:
+        identity = auth_serializer.loads(token, max_age=AUTH_TOKEN_MAX_AGE)
+    except (BadSignature, SignatureExpired):
+        return None
+
+    if not isinstance(identity, dict) or not identity.get("user_id"):
+        return None
+    return identity
 
 
 # ========== 頁面路由 ==========
@@ -85,10 +109,6 @@ def demo():
 @app.route("/login")
 @app.route("/login.html")
 def login():
-    if session.get("role") in ("admin", "developer"):
-        return redirect(url_for("dashboard", page="overview"))
-    elif session.get("role") == "driver":
-        return redirect(url_for("demo"))
     response = app.make_response(render_template("login.html"))
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     return response
@@ -107,8 +127,6 @@ def docs():
 @app.route("/dashboard.html")
 @app.route("/dashboard/<page>")
 def dashboard(page="overview"):
-    if session.get("role") not in ("admin", "developer"):
-        return redirect(url_for("login"))
     allowed_pages = [
         "overview",
         "manage",
@@ -157,13 +175,15 @@ def api_login():
             app.logger.warning(f"[AUTH] Auto-upgrade password hash failed: {update_err}")
 
     if is_valid_pw:
-        session.clear()
-        session["user_id"] = user.id
-        session["username"] = user.username
-        session["display_name"] = user.display_name or user.username
-        session["role"] = user.role
+        token = auth_serializer.dumps({
+            "user_id": user.id,
+            "username": user.username,
+            "display_name": user.display_name or user.username,
+            "role": user.role,
+        })
         return jsonify({
             "status": "ok",
+            "token": token,
             "role": user.role,
             "display_name": user.display_name,
         })
@@ -172,25 +192,24 @@ def api_login():
 
 @app.route("/logout")
 def logout():
-    session.clear()
     return redirect(url_for("login"))
 
 
 @app.route("/api/auth/logout", methods=["POST"])
 def api_logout():
-    session.clear()
     return jsonify({"status": "ok"})
 
 
 @app.route("/api/auth/me")
 def api_me():
-    if "user_id" in session:
+    identity = _get_identity()
+    if identity:
         return jsonify({
             "logged_in": True,
-            "id": session.get("user_id"),
-            "username": session.get("username"),
-            "display_name": session.get("display_name"),
-            "role": session.get("role"),
+            "id": identity.get("user_id"),
+            "username": identity.get("username"),
+            "display_name": identity.get("display_name"),
+            "role": identity.get("role"),
         })
     return jsonify({"logged_in": False})
 
@@ -286,7 +305,8 @@ def reset_state():
 @app.route("/api/alert", methods=["POST"])
 def api_record_alert():
     """接收前端嚴重警告事件，進行滑動視窗累計、通報判定，並寫入資料庫"""
-    user_uuid = session.get("user_id")
+    identity = _get_identity()
+    user_uuid = identity.get("user_id") if identity else None
     if not user_uuid:
         return jsonify({"status": "error", "message": "請先登入後再開始偵測"}), 401
 
@@ -373,8 +393,9 @@ def api_admin_alerts():
     if not 1 <= limit <= 50:
         return jsonify({"status": "error", "message": "單頁最多顯示 50 筆"}), 400
 
-    current_role = session.get("role")
-    current_user_id = session.get("user_id")
+    identity = _get_identity()
+    current_role = identity.get("role")
+    current_user_id = identity.get("user_id")
 
     driver_ids = None
     if current_role == "admin":
@@ -410,8 +431,9 @@ def api_admin_list_users():
     if guard:
         return guard
 
-    current_role = session.get("role")
-    current_user_id = session.get("user_id")
+    identity = _get_identity()
+    current_role = identity.get("role")
+    current_user_id = identity.get("user_id")
 
     try:
         # 建立管理者名稱查找表
@@ -484,8 +506,9 @@ def api_admin_create_user():
     if guard:
         return guard
 
-    current_role = session.get("role")
-    current_user_id = session.get("user_id")
+    identity = _get_identity()
+    current_role = identity.get("role")
+    current_user_id = identity.get("user_id")
 
     data = request.get_json(silent=True) or {}
     username = str(data.get("username", "")).strip()
@@ -546,8 +569,9 @@ def api_admin_delete_user(user_id):
     if guard:
         return guard
 
-    current_role = session.get("role")
-    current_user_id = session.get("user_id")
+    identity = _get_identity()
+    current_role = identity.get("role")
+    current_user_id = identity.get("user_id")
 
     if user_id == current_user_id:
         return jsonify({"status": "error", "message": "無法刪除目前登入的自己帳號"}), 400

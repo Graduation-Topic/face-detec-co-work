@@ -47,6 +47,7 @@
               e.preventDefault();
               try {
                 await fetch("/api/auth/logout", { method: "POST" });
+                window.faceDetectionAuth.clearToken();
               } catch (err) {
                 console.error("Logout request failed: ", err);
               }

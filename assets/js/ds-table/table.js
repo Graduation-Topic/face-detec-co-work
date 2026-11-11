@@ -100,6 +100,7 @@ $("btn-reset").addEventListener("click", async () => {
 $("btn-logout").addEventListener("click", async (event) => {
   event.preventDefault();
   await fetch("/api/auth/logout", { method: "POST" });
+  window.faceDetectionAuth.clearToken();
   window.location.href = "/login";
 });
 

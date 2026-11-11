@@ -1036,7 +1036,7 @@ body.dashboard-loading #alert-tbody {
   }
 }
 
-@media (min-width: 801px) and (max-width: 1304px) {
+@media (max-width: 1300px) {
   .table-wrapper {
     overflow-x: auto;
   }

@@ -50,7 +50,9 @@ function updateEdgeStats(frameStart, elapsedMs) {
     let filterStyle = "none";
     let envStatus = "";
 
-    if (env.brightness !== null) {
+    const hasFace = (window.__latestFaceLandmarks || []).length > 0;
+
+    if (hasFace && env.brightness !== null) {
       const cfg = window.edgeConfig || {};
       const nightBrightThresh = cfg.ENV_NIGHT_BRIGHTNESS;
       const nightHighRatio = cfg.ENV_NIGHT_HIGHLIGHT_RATIO;
@@ -72,6 +74,9 @@ function updateEdgeStats(frameStart, elapsedMs) {
         filterStyle = "brightness(0.85) contrast(1.1)";
         envStatus = "(強光壓制)";
       }
+    } else if (!hasFace) {
+      filterStyle = "none";
+      envStatus = "(未偵測到人臉)";
     }
 
     window.edgeStats.isNightMode = isNightMode;
