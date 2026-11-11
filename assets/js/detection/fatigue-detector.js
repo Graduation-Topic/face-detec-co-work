@@ -309,9 +309,9 @@ export class FatigueDetector {
     const { ear, mar, nodRatio, turnRatio } = this;
     const closed = ear !== null && ear < this.earThreshold;
 
-    // 1.PERCLOS：最近 WINDOWS_SEC 秒內「閉眼樣本 / 全部樣本」
+    // 1.PERCLOS：最近 WINDOW_SEC 秒內「閉眼樣本 / 全部樣本」
     this.closureHistory.push({ t, c: closed ? 1 : 0 });
-    const cutoff = t - this.cfg.WINDOWS_SEC;
+    const cutoff = t - this.cfg.WINDOW_SEC;
     while (this.closureHistory.length && this.closureHistory[0].t < cutoff) {
       this.closureHistory.shift();
     }

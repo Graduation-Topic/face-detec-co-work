@@ -51,7 +51,7 @@ AUTH_TOKEN_MAX_AGE = 86400
 
 ALLOWED_FATIGUE_LEVELS = {"Normal", "Mild", "Severe"}
 
-state = State(fps=Config.FPS, window_sec=Config.WINDOWS_SEC)
+state = State(fps=Config.FPS, window_sec=Config.WINDOW_SEC)
 alert_manager = AlertManager(
     window_sec=Config.ALERT_WINDOW_SEC,
     trigger_count=Config.ALERT_TRIGGER_COUNT,
@@ -386,7 +386,7 @@ def api_config():
         "MOUTH": list(Config.MOUTH),
         "MAR_POINTS": Config.MAR_POINTS,
 
-        "WINDOWS_SEC": Config.WINDOWS_SEC,
+        "WINDOW_SEC": Config.WINDOW_SEC,
         "EAR_CLOSED_THRESHOLD": Config.EAR_CLOSED_THRESHOLD,
         "YAWN_THRESHOLD": Config.YAWN_THRESHOLD,
         "EYE_CLOSURE_MIN_DURATION": Config.EYE_CLOSURE_MIN_DURATION,

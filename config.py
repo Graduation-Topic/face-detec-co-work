@@ -52,8 +52,8 @@ class Config:
     FPS = 30
 
     # 論文(https://www.mdpi.com/1424-8220/23/19/8267)
-    WINDOWS_SEC = 5
-    WINDOW_SIZE = FPS * WINDOWS_SEC
+    WINDOW_SEC = 5
+    WINDOW_SIZE = FPS * WINDOW_SEC
 
     # 門檻設定 (系統預設值)
 
