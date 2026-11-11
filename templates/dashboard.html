@@ -300,7 +300,7 @@
                           <th class="manage-display-name">姓名</th>
                           <th class="manage-role">身分</th>
                           <th class="manage-manager">主管</th>
-                          <th >Line</th>
+                          <th>Line</th>
                           <th class="manage-created-at">建立時間</th>
                           <th class="manage-actions">操作</th>
                         </tr>
@@ -325,10 +325,48 @@
                   <label for="setting-profile">基本資料</label>
                   <div class="sec-setting" data-setting="profile">
                     <div class="sec-setting-lft">
-                      <span>帳號資訊</span>
+                      <span>名稱</span>
                     </div>
                     <div class="sec-setting-rgt">
-                      <span id="settings-user-info" style="font-size:13px; color:var(--color-text-secondary);">載入中…</span>
+                      <span
+                        id="settings-user-name"
+                        style="
+                          font-size: 13px;
+                          color: var(--color-text-secondary);
+                        "
+                        >載入中…</span
+                      >
+                    </div>
+                  </div>
+                  <div class="sec-setting" data-setting="password">
+                    <div class="sec-setting-lft">
+                      <span>密碼</span>
+                    </div>
+                    <div class="sec-setting-rgt">
+                      <button
+                        type="button"
+                        id="btn-open-password-modal"
+                        class="edit-setting-btn cursor-pointer"
+                        aria-label="編輯密碼"
+                        title="編輯密碼"
+                      >
+                        <svg
+                          width="100%"
+                          height="100%"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M2.5 21.4998L8.04927 19.3655C8.40421 19.229 8.58168 19.1607 8.74772 19.0716C8.8952 18.9924 9.0358 18.901 9.16804 18.7984C9.31692 18.6829 9.45137 18.5484 9.72028 18.2795L21 6.99982C22.1046 5.89525 22.1046 4.10438 21 2.99981C19.8955 1.89525 18.1046 1.89524 17 2.99981L5.72028 14.2795C5.45138 14.5484 5.31692 14.6829 5.20139 14.8318C5.09877 14.964 5.0074 15.1046 4.92823 15.2521C4.83911 15.4181 4.77085 15.5956 4.63433 15.9506L2.5 21.4998ZM2.5 21.4998L4.55812 16.1488C4.7054 15.7659 4.77903 15.5744 4.90534 15.4867C5.01572 15.4101 5.1523 15.3811 5.2843 15.4063C5.43533 15.4351 5.58038 15.5802 5.87048 15.8703L8.12957 18.1294C8.41967 18.4195 8.56472 18.5645 8.59356 18.7155C8.61877 18.8475 8.58979 18.9841 8.51314 19.0945C8.42545 19.2208 8.23399 19.2944 7.85107 19.4417L2.5 21.4998Z"
+                            stroke="#ffffff"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -338,9 +376,22 @@
                     <div class="sec-setting-lft">
                       <span>Line Messaging API</span>
                     </div>
-                    <div class="sec-setting-rgt" style="display:flex; align-items:center; gap:8px;">
-                      <button id="line-api-status-badge" class="status-badge inactive cursor-pointer" title="點擊設定 LINE">未連接</button>
-                      <button id="btn-open-line-modal" class="edit-setting-btn cursor-pointer" title="編輯 LINE 設定">
+                    <div
+                      class="sec-setting-rgt"
+                      style="display: flex; align-items: center; gap: 8px"
+                    >
+                      <button
+                        id="line-api-status-badge"
+                        class="status-badge inactive cursor-pointer"
+                        title="點擊設定 LINE"
+                      >
+                        未連接
+                      </button>
+                      <button
+                        id="btn-open-line-modal"
+                        class="edit-setting-btn cursor-pointer"
+                        title="編輯 LINE 設定"
+                      >
                         <svg
                           width="100%"
                           height="100%"
@@ -442,7 +493,7 @@
       <div class="dash-modal-backdrop" id="modal-backdrop"></div>
       <div class="dash-modal-box">
         <div class="dash-modal-header">
-          <h2 class="dash-modal-title">新增員工帳號</h2>
+          <h2 class="dash-modal-title">新增帳號</h2>
           <button
             type="button"
             id="btn-close-modal"
@@ -539,79 +590,6 @@
               </svg>
             </div>
           </div>
-          <div class="modal-form-group" id="group-edit-active">
-            <label for="select-edit-active">帳號啟用狀態</label>
-            <select id="select-edit-active">
-              <option value="true">✅ 正常啟用</option>
-              <option value="false">⛔ 停用帳號</option>
-            </select>
-          </div>
-          <div class="modal-form-group">
-            <label for="inp-edit-line-id">LINE User ID / Group ID (選填)</label>
-            <input type="text" id="inp-edit-line-id" placeholder="例如：U1234567890abcdef..." />
-          </div>
-          <div class="modal-form-group" id="group-edit-line-token">
-            <label for="inp-edit-line-token">專屬 Channel Access Token (選填)</label>
-            <input type="password" id="inp-edit-line-token" placeholder="留空不更動，輸入空格可清空" />
-            <small id="edit-token-hint" style="color:var(--color-text-secondary);font-size:11px;margin-top:2px;"></small>
-          </div>
-          <div class="modal-form-group" style="flex-direction:row; align-items:center; justify-content:space-between; margin-top:8px;">
-            <label for="chk-edit-line-enabled" style="margin:0; cursor:pointer;">接收疲勞通報推播</label>
-            <input type="checkbox" id="chk-edit-line-enabled" style="width:20px; height:20px; cursor:pointer;" />
-          </div>
-          <div class="modal-form-group" id="group-edit-line-all" style="flex-direction:row; align-items:center; justify-content:space-between; margin-top:4px;">
-            <label for="chk-edit-line-all" style="margin:0; cursor:pointer;">接收所有車隊通報 (全域總覽)</label>
-            <input type="checkbox" id="chk-edit-line-all" style="width:20px; height:20px; cursor:pointer;" />
-          </div>
-          <div id="edit-user-error" class="dash-msg dash-msg-error hidden"></div>
-          <div class="dash-modal-footer">
-            <button type="button" id="btn-cancel-edit-modal" class="btn-modal-cancel cursor-pointer">取消</button>
-            <button type="submit" id="btn-submit-edit-modal" class="btn-modal-submit cursor-pointer">儲存修改</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- 個人 LINE 串接設定彈窗 Modal -->
-    <div id="line-settings-modal" class="dash-modal hidden">
-      <div class="dash-modal-backdrop" id="line-modal-backdrop"></div>
-      <div class="dash-modal-box" style="max-width: 480px;">
-        <div class="dash-modal-header">
-          <h2 class="dash-modal-title">LINE Messaging API 設定</h2>
-          <button type="button" id="btn-close-line-modal" class="btn-close-modal cursor-pointer" aria-label="關閉">&times;</button>
-        </div>
-        <form id="line-settings-form" autocomplete="off">
-          <div class="modal-form-group">
-            <label for="inp-my-line-id">LINE User ID / Group ID *</label>
-            <input type="text" id="inp-my-line-id" placeholder="例如：U1234567890abcdef..." />
-            <small style="color:var(--color-text-secondary);font-size:12px;margin-top:2px;">
-              可在 LINE Developers 後台、或透過專屬查詢 Bot 取得您的 User ID (U 開頭共 33 字元)。
-            </small>
-          </div>
-          <div class="modal-form-group">
-            <label for="inp-my-line-token">專屬 Channel Access Token (選填)</label>
-            <input type="password" id="inp-my-line-token" placeholder="留空則使用系統預設 Token" />
-            <small id="token-status-hint" style="color:var(--color-text-secondary);font-size:12px;margin-top:2px;"></small>
-          </div>
-          <div class="modal-form-group" style="flex-direction:row; align-items:center; justify-content:space-between; margin-top:10px;">
-            <label for="chk-my-line-enabled" style="margin:0; cursor:pointer;">接收疲勞通報推播</label>
-            <input type="checkbox" id="chk-my-line-enabled" style="width:20px; height:20px; cursor:pointer;" />
-          </div>
-          <div class="modal-form-group hidden" id="group-my-line-all" style="flex-direction:row; align-items:center; justify-content:space-between; margin-top:6px;">
-            <label for="chk-my-line-all" style="margin:0; cursor:pointer;">接收所有車隊通報 (全域總覽)</label>
-            <input type="checkbox" id="chk-my-line-all" style="width:20px; height:20px; cursor:pointer;" />
-          </div>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:14px; border-top:1px solid var(--color-border);">
-            <button type="button" id="btn-test-line-push" class="dash-btn cursor-pointer" style="font-size:12px; padding:6px 12px; background:rgba(52,199,89,0.15); color:#34c759; border:1px solid rgba(52,199,89,0.3);">
-              發送測試訊息
-            </button>
-            <span id="line-test-feedback" style="font-size:12px; color:var(--color-text-secondary); flex:1; margin-left:10px; text-align:right;"></span>
-          </div>
-
-          <div id="line-settings-error" class="dash-msg dash-msg-error hidden" style="margin-top:12px;"></div>
-          <div id="line-settings-success" class="dash-msg dash-msg-success hidden" style="margin-top:12px;"></div>
-
           <div class="dash-modal-footer">
             <button
               type="button"
@@ -626,6 +604,377 @@
               class="btn-modal-submit cursor-pointer"
             >
               建立
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="edit-user-modal" class="dash-modal hidden">
+      <div class="dash-modal-backdrop" id="edit-modal-backdrop"></div>
+      <div class="dash-modal-box">
+        <div class="dash-modal-header">
+          <h2 class="dash-modal-title">編輯員工帳號</h2>
+          <button
+            type="button"
+            id="btn-close-edit-modal"
+            class="btn-close-modal cursor-pointer"
+            aria-label="關閉"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z"
+                fill="#ffffff"
+              />
+            </svg>
+          </button>
+        </div>
+        <form id="edit-user-form" autocomplete="off">
+          <input type="hidden" id="inp-edit-user-id" />
+          <div class="modal-form-group">
+            <label for="inp-edit-username">帳號</label>
+            <input type="text" id="inp-edit-username" disabled />
+          </div>
+          <div class="modal-form-group">
+            <label for="inp-edit-name">名稱*</label>
+            <input type="text" id="inp-edit-name" required />
+          </div>
+          <div class="modal-form-group">
+            <label for="inp-edit-password">新密碼（選填）</label>
+            <input
+              type="password"
+              id="inp-edit-password"
+              autocomplete="new-password"
+            />
+          </div>
+          <div class="modal-form-group hidden" id="group-edit-role">
+            <label for="select-edit-role">身分</label>
+            <div class="modal-select-wrap">
+              <select id="select-edit-role">
+                <option value="driver">駕駛</option>
+                <option value="admin">管理員</option>
+              </select>
+              <svg
+                class="modal-select-chevron"
+                width="100%"
+                height="100%"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M18 15L12 9L6 15"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
+          <div class="modal-form-group hidden" id="group-edit-manager">
+            <label for="select-edit-manager">所屬主管</label>
+            <div class="modal-select-wrap">
+              <select id="select-edit-manager">
+                <option value="">無</option>
+              </select>
+              <svg
+                class="modal-select-chevron"
+                width="100%"
+                height="100%"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M18 15L12 9L6 15"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
+          <div class="modal-form-group" id="group-edit-active">
+            <label for="select-edit-active">帳號啟用狀態</label>
+            <select id="select-edit-active">
+              <option value="true">啟用</option>
+              <option value="false">停用</option>
+            </select>
+          </div>
+          <div class="modal-form-group">
+            <label for="inp-edit-line-id">LINE User ID / Group ID (選填)</label>
+            <input
+              type="text"
+              id="inp-edit-line-id"
+              placeholder="LINE User ID / Group ID"
+            />
+          </div>
+          <div class="modal-form-group" id="group-edit-line-token">
+            <label for="inp-edit-line-token">Channel Access Token (選填)</label>
+            <input
+              type="password"
+              id="inp-edit-line-token"
+              placeholder="Channel Access Token"
+            />
+            <small id="edit-token-hint" class="modal-form-hint"></small>
+          </div>
+          <div class="modal-form-group modal-check-group">
+            <label for="chk-edit-line-enabled">接收疲勞通報推播</label>
+            <input type="checkbox" id="chk-edit-line-enabled" />
+          </div>
+          <div
+            class="modal-form-group modal-check-group hidden"
+            id="group-edit-line-all"
+          >
+            <label for="chk-edit-line-all">接收所有車隊通報 (全域總覽)</label>
+            <input type="checkbox" id="chk-edit-line-all" />
+          </div>
+          <div
+            id="edit-user-error"
+            class="dash-msg dash-msg-error hidden"
+          ></div>
+          <div class="dash-modal-footer">
+            <button
+              type="button"
+              id="btn-cancel-edit-modal"
+              class="btn-modal-cancel cursor-pointer"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              id="btn-submit-edit-modal"
+              class="btn-modal-submit cursor-pointer"
+            >
+              儲存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="delete-user-modal" class="dash-modal hidden">
+      <div class="dash-modal-backdrop" id="delete-modal-backdrop"></div>
+      <div class="dash-modal-box delete-user-modal-box">
+        <div class="dash-modal-header">
+          <h2 class="dash-modal-title">刪除帳號</h2>
+          <button
+            type="button"
+            id="btn-close-delete-modal"
+            class="btn-close-modal cursor-pointer"
+            aria-label="關閉"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z"
+                fill="#ffffff"
+              />
+            </svg>
+          </button>
+        </div>
+        <p class="delete-user-message" id="delete-user-message"></p>
+        <div class="dash-modal-footer">
+          <button
+            type="button"
+            id="btn-cancel-delete-modal"
+            class="btn-modal-cancel cursor-pointer"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            id="btn-confirm-delete"
+            class="btn-modal-danger cursor-pointer"
+          >
+            刪除
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 個人 LINE 串接設定彈窗 Modal -->
+    <div id="line-settings-modal" class="dash-modal hidden">
+      <div class="dash-modal-backdrop" id="line-modal-backdrop"></div>
+      <div class="dash-modal-box">
+        <div class="dash-modal-header">
+          <h2 class="dash-modal-title">LINE Messaging API 設定</h2>
+          <button
+            type="button"
+            id="btn-close-line-modal"
+            class="btn-close-modal cursor-pointer"
+            aria-label="關閉"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z"
+                fill="#ffffff"
+              />
+            </svg>
+          </button>
+        </div>
+        <form id="line-settings-form" autocomplete="off">
+          <div class="modal-form-group">
+            <label for="inp-my-line-id">LINE User ID / Group ID *</label>
+            <input
+              type="text"
+              id="inp-my-line-id"
+              placeholder="LINE User ID or Group ID"
+            />
+            <small class="modal-form-hint">
+              可在 LINE Developers 後台、或透過專屬查詢 Bot 取得您的 User ID (U
+              開頭共 33 字元)。
+            </small>
+          </div>
+          <div class="modal-form-group">
+            <label for="inp-my-line-token">Channel Access Token (選填)</label>
+            <input
+              type="password"
+              id="inp-my-line-token"
+              placeholder="Channel Access Token"
+            />
+            <small id="token-status-hint" class="modal-form-hint"></small>
+          </div>
+          <div class="modal-form-group modal-check-group">
+            <label for="chk-my-line-enabled">接收疲勞通報推播</label>
+            <input type="checkbox" id="chk-my-line-enabled" />
+          </div>
+          <div
+            class="modal-form-group modal-check-group hidden"
+            id="group-my-line-all"
+          >
+            <label for="chk-my-line-all">接收所有車隊通報 (全域總覽)</label>
+            <input type="checkbox" id="chk-my-line-all" />
+          </div>
+
+          <div class="line-test-row">
+            <button
+              type="button"
+              id="btn-test-line-push"
+              class="dash-btn cursor-pointer"
+            >
+              發送測試訊息
+            </button>
+            <span id="line-test-feedback"></span>
+          </div>
+
+          <div
+            id="line-settings-error"
+            class="dash-msg dash-msg-error hidden"
+          ></div>
+          <div
+            id="line-settings-success"
+            class="dash-msg dash-msg-success hidden"
+          ></div>
+
+          <div class="dash-modal-footer">
+            <button
+              type="button"
+              id="btn-cancel-line-modal"
+              class="btn-modal-cancel cursor-pointer"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              id="btn-submit-line-modal"
+              class="btn-modal-submit cursor-pointer"
+            >
+              儲存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="password-modal" class="dash-modal hidden">
+      <div class="dash-modal-backdrop" id="password-modal-backdrop"></div>
+      <div class="dash-modal-box">
+        <div class="dash-modal-header">
+          <h2 class="dash-modal-title">更改帳號密碼</h2>
+          <button
+            type="button"
+            id="btn-close-password-modal"
+            class="btn-close-modal cursor-pointer"
+            aria-label="關閉"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z"
+                fill="#ffffff"
+              />
+            </svg>
+          </button>
+        </div>
+        <form id="password-form" autocomplete="off">
+          <div class="modal-form-group">
+            <label for="inp-new-user-password">新密碼</label>
+            <input
+              type="password"
+              id="inp-new-user-password"
+              autocomplete="new-password"
+              minlength="4"
+              required
+              placeholder="至少 4 位數"
+            />
+          </div>
+          <div class="modal-form-group">
+            <label for="inp-confirm-user-password">確認新密碼</label>
+            <input
+              type="password"
+              id="inp-confirm-user-password"
+              autocomplete="new-password"
+              minlength="4"
+              required
+              placeholder="再次輸入新密碼"
+            />
+          </div>
+          <div id="password-error" class="dash-msg dash-msg-error hidden"></div>
+          <div
+            id="password-success"
+            class="dash-msg dash-msg-success hidden"
+          ></div>
+          <div class="dash-modal-footer">
+            <button
+              type="button"
+              id="btn-cancel-password-modal"
+              class="btn-modal-cancel cursor-pointer"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              id="btn-submit-password-modal"
+              class="btn-modal-submit cursor-pointer"
+            >
+              儲存
             </button>
           </div>
         </form>

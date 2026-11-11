@@ -10,14 +10,7 @@ database.py - 混合架構資料庫模組 (Hybrid Database Module)
 import os
 from datetime import datetime, timezone
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, cast
-try:
-    from typing import LiteralString
-except ImportError:
-    try:
-        from typing_extensions import LiteralString
-    except ImportError:
-        LiteralString = str  # type: ignore
+from typing import Any, Dict, List, Optional
 
 # PostgreSQL 原生連線驅動
 import psycopg
@@ -186,10 +179,10 @@ def init_db() -> None:
 
 # ========== 使用者操作 (User Operations) ==========
 
-USER_COLUMNS_SQL = """
+USER_COLUMNS_SQL = sql.SQL("""
     uuid, "userID", "userName", hash_password, role, is_active, manager_id,
     line_token, line_user_id, line_notify_enabled, line_notify_all, created_at, updated_at
-"""
+""")
 
 def get_user_by_username(username: str) -> Optional[User]:
     """依帳號名稱查詢已啟用的使用者"""
@@ -197,13 +190,13 @@ def get_user_by_username(username: str) -> Optional[User]:
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    f"""
+                    sql.SQL("""
                     SELECT {USER_COLUMNS_SQL}
                     FROM public.users
                     WHERE "userID" = %s
                       AND is_active = TRUE
                     LIMIT 1
-                    """,
+                    """).format(USER_COLUMNS_SQL=USER_COLUMNS_SQL),
                     (username,),
                 )
                 rows = cursor.fetchall()
@@ -229,12 +222,12 @@ def get_user_by_id(user_id: Any) -> Optional[User]:
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    f"""
+                    sql.SQL("""
                     SELECT {USER_COLUMNS_SQL}
                     FROM public.users
                     WHERE uuid::text = %s OR "userID" = %s
                     LIMIT 1
-                    """,
+                    """).format(USER_COLUMNS_SQL=USER_COLUMNS_SQL),
                     (uid_str, uid_str),
                 )
                 rows = cursor.fetchall()
@@ -262,27 +255,31 @@ def list_users(
     mgr_str = str(manager_id).strip() if manager_id else None
 
     if is_direct_db_configured():
-        conditions = []
+        conditions: List[sql.Composable] = []
         if not include_inactive:
-            conditions.append("is_active = TRUE")
+            conditions.append(sql.SQL("is_active = TRUE"))
         params: List[Any] = []
         if role:
-            conditions.append("role = %s")
+            conditions.append(sql.SQL("role = %s"))
             params.append(role)
         if mgr_str:
-            conditions.append("manager_id::text = %s")
+            conditions.append(sql.SQL("manager_id::text = %s"))
             params.append(mgr_str)
 
-        where_clause = (" WHERE " + " AND ".join(conditions)) if conditions else ""
-        query = f"""
+        where_clause = (
+            sql.SQL(" WHERE ") + sql.SQL(" AND ").join(conditions)
+            if conditions
+            else sql.SQL("")
+        )
+        query = sql.SQL("""
             SELECT {USER_COLUMNS_SQL}
             FROM public.users
             {where_clause}
             ORDER BY created_at ASC
-        """
+        """).format(USER_COLUMNS_SQL=USER_COLUMNS_SQL, where_clause=where_clause)
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(cast(LiteralString, query), tuple(params))
+                cursor.execute(query, tuple(params))
                 rows = cursor.fetchall()
         return [User.from_row(row) for row in rows]
     elif supabase:
@@ -317,11 +314,11 @@ def create_user(
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    f"""
+                    sql.SQL("""
                     INSERT INTO public.users ("userID", "userName", hash_password, role, is_active, manager_id, line_token, line_user_id)
                     VALUES (%s, %s, %s, %s, TRUE, %s, %s, %s)
                     RETURNING {USER_COLUMNS_SQL}
-                    """,
+                    """).format(USER_COLUMNS_SQL=USER_COLUMNS_SQL),
                     (username, d_name, password_hash, role, mgr_val, l_tok, l_uid),
                 )
                 row = cursor.fetchone()
@@ -365,50 +362,53 @@ def update_user(
     """更新使用者資料（總管理員修改全部帳號資料 / 使用者修改個人設定）"""
     uid_str = str(user_id).strip()
     if is_direct_db_configured():
-        set_clauses = ['updated_at = NOW()']
+        set_clauses: List[sql.Composable] = [sql.SQL("updated_at = NOW()")]
         params: List[Any] = []
         if display_name is not None:
-            set_clauses.append('"userName" = %s')
+            set_clauses.append(sql.SQL('"userName" = %s'))
             params.append(display_name)
         if role is not None:
-            set_clauses.append("role = %s")
+            set_clauses.append(sql.SQL("role = %s"))
             params.append(role)
         if manager_id is not None:
             # 支援傳入空字串或 None 清除主管
             mgr_val = str(manager_id).strip() if (manager_id and str(manager_id).strip()) else None
-            set_clauses.append("manager_id = %s")
+            set_clauses.append(sql.SQL("manager_id = %s"))
             params.append(mgr_val)
         if password_hash is not None:
-            set_clauses.append("hash_password = %s")
+            set_clauses.append(sql.SQL("hash_password = %s"))
             params.append(password_hash)
         if is_active is not None:
-            set_clauses.append("is_active = %s")
+            set_clauses.append(sql.SQL("is_active = %s"))
             params.append(bool(is_active))
         if line_token is not None:
             tok_val = str(line_token).strip() if (line_token and str(line_token).strip()) else None
-            set_clauses.append("line_token = %s")
+            set_clauses.append(sql.SQL("line_token = %s"))
             params.append(tok_val)
         if line_user_id is not None:
             uid_val = str(line_user_id).strip() if (line_user_id and str(line_user_id).strip()) else None
-            set_clauses.append("line_user_id = %s")
+            set_clauses.append(sql.SQL("line_user_id = %s"))
             params.append(uid_val)
         if line_notify_enabled is not None:
-            set_clauses.append("line_notify_enabled = %s")
+            set_clauses.append(sql.SQL("line_notify_enabled = %s"))
             params.append(bool(line_notify_enabled))
         if line_notify_all is not None:
-            set_clauses.append("line_notify_all = %s")
+            set_clauses.append(sql.SQL("line_notify_all = %s"))
             params.append(bool(line_notify_all))
 
         params.append(uid_str)
-        sql_query = f"""
+        query = sql.SQL("""
             UPDATE public.users
-            SET {', '.join(set_clauses)}
+            SET {set_clauses}
             WHERE uuid::text = %s
             RETURNING {USER_COLUMNS_SQL}
-        """
+        """).format(
+            set_clauses=sql.SQL(", ").join(set_clauses),
+            USER_COLUMNS_SQL=USER_COLUMNS_SQL,
+        )
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(cast(LiteralString, sql_query), tuple(params))
+                cursor.execute(query, tuple(params))
                 row = cursor.fetchone()
         return User.from_row(row) if row else None
     elif supabase:
@@ -491,16 +491,17 @@ def insert_event(data: Dict[str, Any]) -> AlertEvent:
 def list_recent_alerts(limit: int, driver_ids: Optional[List[Any]] = None) -> List[AlertEvent]:
 
     if is_direct_db_configured():
-        where_sql = ""
+        where_sql: sql.Composable = sql.SQL("")
         params: List[Any] = []
         if driver_ids is not None:
             if not driver_ids:
                 return []
-            placeholders = ", ".join(["%s"] * len(driver_ids))
-            where_sql = f"WHERE event.uuid::text IN ({placeholders})"
+            where_sql = sql.SQL("WHERE event.uuid::text IN ({})").format(
+                sql.SQL(", ").join(sql.Placeholder() for _ in driver_ids)
+            )
             params.extend([str(d) for d in driver_ids])
 
-        query = f"""
+        query = sql.SQL("""
             SELECT
                 event.*,
                 users."userID" AS user_id,
@@ -510,12 +511,14 @@ def list_recent_alerts(limit: int, driver_ids: Optional[List[Any]] = None) -> Li
             {where_sql}
             ORDER BY event.created_at DESC
             LIMIT %s
-        """
+        """).format(
+            where_sql=where_sql,
+        )
         params.append(limit)
 
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(cast(LiteralString, query), tuple(params))
+                cursor.execute(query, tuple(params))
                 rows = cursor.fetchall()
         return [AlertEvent.from_row(row) for row in rows]
     elif supabase:

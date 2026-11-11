@@ -1,5 +1,6 @@
 .dash-nav-inner {
   display: flex;
+  max-width: 1400px;
   width: 100%;
   height: 100%;
   gap: 48px;
@@ -8,6 +9,7 @@
 
 .dash-content {
   display: flex;
+  max-width: 1400px;
   width: 100%;
   height: calc(100vh - var(--nav-height));
   min-height: 0;
@@ -430,6 +432,20 @@ body.dashboard-loading #alert-tbody {
   text-overflow: ellipsis;
 }
 
+.manage-actions {
+  width: 150px;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.manage-actions-inner {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+}
+
 .table-empty {
   height: 100%;
   text-align: center;
@@ -636,19 +652,23 @@ body.dashboard-loading #alert-tbody {
 }
 
 .btn-user-edit {
-  padding: 4px 10px;
-  font-size: 12px;
-  background-color: rgba(10, 132, 255, 0.12);
-  color: #0a84ff;
-  border: 1px solid rgba(10, 132, 255, 0.25);
-  border-radius: 4px;
-  transition: all 0.2s ease;
-  margin-right: 6px;
-  cursor: pointer;
+  display: flex;
+  width: 24px;
+  height: 24px;
+  aspect-ratio: 1 / 1;
+  justify-content: center;
+  align-items: center;
+  outline: none;
+  border: 1px solid var(--color-accent);
+  background-color: transparent;
+  padding: 2px;
+  border-radius: var(--button-border-radius-6px);
+  transition: all 0.25s ease;
 }
-.btn-user-edit:hover {
-  background-color: rgba(10, 132, 255, 0.25);
-  border-color: #0a84ff;
+
+.btn-user-edit svg {
+  width: 16px;
+  aspect-ratio: 1 / 1;
 }
 
 .btn-user-delete {
@@ -761,7 +781,7 @@ body.dashboard-loading #alert-tbody {
 }
 
 .btn-close-modal:hover {
-  background-color: var(--color-surface-hover);
+  background-color: var(--color-surface-raised);
   color: var(--color-text-primary);
 }
 
@@ -781,6 +801,30 @@ body.dashboard-loading #alert-tbody {
   font-size: 13px;
   color: var(--color-text-secondary);
   font-weight: 500;
+}
+
+.modal-form-hint {
+  margin-top: 2px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.modal-check-group {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.modal-check-group label {
+  margin: 0;
+  cursor: pointer;
+}
+
+.modal-check-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
 }
 
 .modal-form-group input {
@@ -856,7 +900,7 @@ body.dashboard-loading #alert-tbody {
 
 .btn-modal-submit {
   display: flex;
-  width: 48px;
+  width: auto;
   height: 24px;
   justify-content: center;
   align-items: center;
@@ -874,6 +918,58 @@ body.dashboard-loading #alert-tbody {
 
 .btn-modal-submit:hover {
   opacity: 0.9;
+}
+
+.btn-modal-danger {
+  display: flex;
+  height: 24px;
+  justify-content: center;
+  align-items: center;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--button-border-radius-6px);
+  background-color: var(--color-danger);
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1;
+  outline: none;
+  transition: opacity 0.25s ease;
+}
+
+.btn-modal-danger:hover {
+  opacity: 0.9;
+}
+
+.delete-user-message {
+  margin: 0 2px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.line-test-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+.line-test-row .dash-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #34c759;
+  background: rgba(52, 199, 89, 0.15);
+  border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+#line-test-feedback {
+  flex: 1;
+  margin-left: 10px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  text-align: right;
 }
 
 /* Settings */

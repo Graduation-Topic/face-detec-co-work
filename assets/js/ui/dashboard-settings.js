@@ -10,13 +10,6 @@
 
   let currentSettings = null;
 
-  const roleLabels = {
-    super_admin: "總管理員",
-    admin: "車隊管理員",
-    driver: "駕駛員",
-    employee: "員工",
-  };
-
   // ===== 載入個人與 LINE 設定 =====
   async function loadSettings() {
     try {
@@ -39,10 +32,9 @@
   // ===== 渲染設定介面 =====
   function renderSettingsView(st) {
     // 1. 基本資料
-    const userInfoEl = $("settings-user-info");
+    const userInfoEl = $("settings-user-name");
     if (userInfoEl) {
-      const rLabel = roleLabels[st.role] || st.role || "使用者";
-      userInfoEl.textContent = `${st.display_name || st.username} (@${st.username}) · ${rLabel}`;
+      userInfoEl.textContent = st.username || st.display_name || "使用者";
     }
 
     // 2. LINE API 連線狀態
@@ -96,6 +88,72 @@
     });
   }
 
+  // ===== 密碼更改 Modal 邏輯 =====
+  const passwordModal = $("password-modal");
+  const openPasswordBtn = $("btn-open-password-modal");
+  const closePasswordBtn = $("btn-close-password-modal");
+  const cancelPasswordBtn = $("btn-cancel-password-modal");
+  const passwordBackdrop = $("password-modal-backdrop");
+  const passwordForm = $("password-form");
+  const passwordError = $("password-error");
+  const passwordSuccess = $("password-success");
+
+  function closePasswordModal() {
+    if (!passwordModal) return;
+    passwordModal.classList.add("hidden");
+  }
+
+  function openPasswordModal() {
+    if (!passwordModal) return;
+    passwordForm?.reset();
+    passwordError?.classList.add("hidden");
+    passwordSuccess?.classList.add("hidden");
+    passwordModal.classList.remove("hidden");
+  }
+
+  if (openPasswordBtn) openPasswordBtn.addEventListener("click", openPasswordModal);
+  if (closePasswordBtn) closePasswordBtn.addEventListener("click", closePasswordModal);
+  if (cancelPasswordBtn) cancelPasswordBtn.addEventListener("click", closePasswordModal);
+  if (passwordBackdrop) passwordBackdrop.addEventListener("click", closePasswordModal);
+
+  if (passwordForm) {
+    passwordForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      passwordError?.classList.add("hidden");
+      passwordSuccess?.classList.add("hidden");
+
+      const password = $("inp-new-user-password").value;
+      const confirmation = $("inp-confirm-user-password").value;
+      const submitBtn = $("btn-submit-password-modal");
+
+      if (password !== confirmation) {
+        passwordError.textContent = "兩次輸入的密碼不一致";
+        passwordError.classList.remove("hidden");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      try {
+        const res = await fetch("/api/user/password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "密碼更新失敗");
+
+        passwordSuccess.textContent = data.message || "密碼已成功更新";
+        passwordSuccess.classList.remove("hidden");
+        setTimeout(closePasswordModal, 800);
+      } catch (err) {
+        passwordError.textContent = err.message;
+        passwordError.classList.remove("hidden");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  }
+
   // ===== LINE 設定彈窗邏輯 =====
   const lineModal = $("line-settings-modal");
   const openLineBtn = $("btn-open-line-modal");
@@ -131,11 +189,14 @@
     const tokenHint = $("token-status-hint");
     if (tokenHint) {
       if (st.has_custom_token) {
-        tokenHint.textContent = "目前已設定專屬 Token (留空表示不更動，若需變更請直接輸入)";
+        tokenHint.textContent =
+          "目前已設定專屬 Token (留空表示不更動，若需變更請直接輸入)";
       } else if (st.has_system_token) {
-        tokenHint.textContent = "目前使用系統預設全域 Token (選填，如需自訂專屬 Bot 請在此填入)";
+        tokenHint.textContent =
+          "目前使用系統預設全域 Token (選填，如需自訂專屬 Bot 請在此填入)";
       } else {
-        tokenHint.textContent = "目前系統未設定預設 Token，請填寫您的 LINE Channel Access Token";
+        tokenHint.textContent =
+          "目前系統未設定預設 Token，請填寫您的 LINE Channel Access Token";
       }
     }
 
@@ -230,7 +291,9 @@
       const targetId = $("inp-my-line-id").value.trim();
       const tokenInput = $("inp-my-line-token").value;
       const notifyEnabled = $("chk-my-line-enabled").checked;
-      const notifyAll = $("chk-my-line-all") ? $("chk-my-line-all").checked : true;
+      const notifyAll = $("chk-my-line-all")
+        ? $("chk-my-line-all").checked
+        : true;
 
       const payload = {
         line_user_id: targetId || null,
@@ -285,7 +348,9 @@
     }
   });
 
-  const settingsLink = document.querySelector('.dash-bookmark [dash-page="settings"]');
+  const settingsLink = document.querySelector(
+    '.dash-bookmark [dash-page="settings"]',
+  );
   if (settingsLink) {
     settingsLink.addEventListener("click", () => {
       setTimeout(loadSettings, 50);
@@ -295,4 +360,3 @@
   // 初始載入
   loadSettings();
 })();
-

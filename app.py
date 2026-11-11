@@ -256,6 +256,31 @@ def api_get_line_settings():
     })
 
 
+@app.route("/api/user/password", methods=["POST"])
+def api_change_user_password():
+    """更新當前登入使用者的密碼"""
+    identity = _get_identity()
+    user_id = identity.get("user_id") if identity else None
+    if not user_id:
+        return jsonify({"status": "error", "message": "請先登入"}), 401
+
+    user = get_user_by_id(user_id)
+    if not user:
+        return jsonify({"status": "error", "message": "使用者不存在"}), 404
+
+    data = request.get_json(silent=True) or {}
+    new_password = str(data.get("password", "")).strip()
+    if len(new_password) < 4:
+        return jsonify({"status": "error", "message": "密碼至少需要 4 位數"}), 400
+
+    try:
+        update_user(user.id, password_hash=generate_password_hash(new_password))
+        return jsonify({"status": "success", "message": "密碼已成功更新"})
+    except Exception as e:
+        app.logger.error(f"[USER] update password error: {e}")
+        return jsonify({"status": "error", "message": "密碼更新失敗"}), 500
+
+
 @app.route("/api/user/line-settings", methods=["POST"])
 def api_save_line_settings():
     """儲存當前登入使用者的 LINE 綁定設定"""

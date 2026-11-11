@@ -36,9 +36,9 @@
       return '<span class="role-badge role-badge-developer">開發者</span>';
     }
     if (role === "admin") {
-      return '<span class="role-badge role-badge-admin">車隊管理員</span>';
+      return '<span class="role-badge role-badge-admin">管理員</span>';
     }
-    return '<span class="role-badge role-badge-driver">駕駛員</span>';
+    return '<span class="role-badge role-badge-driver">駕駛</span>';
   }
 
   // ===== 載入使用者清單 =====
@@ -79,7 +79,7 @@
     }
   }
 
-  // ===== 載入管理員清單 (供開發者/總管理員指派所屬主管) =====
+  // ===== 載入管理員清單 =====
   async function loadManagers() {
     if (currentRole !== "developer" && currentRole !== "super_admin") return;
     try {
@@ -119,7 +119,8 @@
     const groupRole = $("group-new-role");
     const groupManager = $("group-new-manager");
     const selectRole = $("select-new-role");
-    const isSuper = currentRole === "developer" || currentRole === "super_admin";
+    const isSuper =
+      currentRole === "developer" || currentRole === "super_admin";
 
     if (isSuper) {
       if (groupRole) groupRole.classList.remove("hidden");
@@ -146,12 +147,34 @@
     tbody.innerHTML = users
       .map((u) => {
         const isSelf = u.id === currentUserId;
-        const isSuper = currentRole === "developer" || currentRole === "super_admin";
-        const canEdit = isSuper ? true : u.role === "driver" && u.manager_id === currentUserId;
-        const canDelete = isSuper ? !isSelf : u.role === "driver" && u.manager_id === currentUserId;
+        const isSuper =
+          currentRole === "developer" || currentRole === "super_admin";
+        const canEdit = isSuper
+          ? true
+          : u.role === "driver" && u.manager_id === currentUserId;
+        const canDelete = isSuper
+          ? !isSelf
+          : u.role === "driver" && u.manager_id === currentUserId;
 
         const editBtn = canEdit
-          ? `<button type="button" class="btn-user-edit cursor-pointer" data-id="${u.id}" title="編輯">編輯</button>`
+          ? `<button type="button" class="btn-user-edit cursor-pointer" data-id="${u.id}" aria-label="編輯 ${u.display_name || u.username}" title="編輯">
+              <svg
+                width="100%"
+                height="100%"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M2.5 21.4998L8.04927 19.3655C8.40421 19.229 8.58168 19.1607 8.74772 19.0716C8.8952 18.9924 9.0358 18.901 9.16804 18.7984C9.31692 18.6829 9.45137 18.5484 9.72028 18.2795L21 6.99982C22.1046 5.89525 22.1046 4.10438 21 2.99981C19.8955 1.89525 18.1046 1.89524 17 2.99981L5.72028 14.2795C5.45138 14.5484 5.31692 14.6829 5.20139 14.8318C5.09877 14.964 5.0074 15.1046 4.92823 15.2521C4.83911 15.4181 4.77085 15.5956 4.63433 15.9506L2.5 21.4998ZM2.5 21.4998L4.55812 16.1488C4.7054 15.7659 4.77903 15.5744 4.90534 15.4867C5.01572 15.4101 5.1523 15.3811 5.2843 15.4063C5.43533 15.4351 5.58038 15.5802 5.87048 15.8703L8.12957 18.1294C8.41967 18.4195 8.56472 18.5645 8.59356 18.7155C8.61877 18.8475 8.58979 18.9841 8.51314 19.0945C8.42545 19.2208 8.23399 19.2944 7.85107 19.4417L2.5 21.4998Z"
+                  stroke="#0a84ff"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>`
           : "";
 
         const deleteBtn = canDelete
@@ -180,7 +203,9 @@
             <td class="manage-manager">${u.manager_name || "—"}</td>
             <td class="manage-line">${lineBadge}</td>
             <td class="manage-created-at">${formatTime(u.created_at)}</td>
-            <td class="manage-actions">${actionBtns}</td>
+            <td class="manage-actions">
+              <div class="manage-actions-inner">${actionBtns}</div>
+            </td>
           </tr>
         `;
       })
@@ -202,17 +227,26 @@
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-id");
         const name = btn.getAttribute("data-name");
-        deleteUser(id, name);
+        openDeleteModal(id, name);
       });
     });
   }
 
-  // ===== 刪除員工 =====
-  async function deleteUser(id, name) {
-    if (!confirm(`確定刪除帳號「${name}」(ID: ${id})？`)) {
-      return;
-    }
+  function closeDeleteModal() {
+    if (!deleteModal) return;
+    deleteModal.classList.add("hidden");
+    pendingDelete = null;
+  }
 
+  function openDeleteModal(id, name) {
+    if (!deleteModal || !deleteMessage) return;
+    pendingDelete = { id, name };
+    deleteMessage.textContent = `確定要刪除帳號「${name}」(ID: ${id})？`;
+    deleteModal.classList.remove("hidden");
+  }
+
+  // ===== 刪除員工 =====
+  async function deleteUser(id) {
     try {
       const res = await fetch(`/api/admin/users/${id}`, {
         method: "DELETE",
@@ -223,8 +257,10 @@
       }
       showActionMsg(data.message || "刪除成功", "success");
       loadUsers();
+      return true;
     } catch (err) {
       showActionMsg(err.message, "error");
+      return false;
     }
   }
 
@@ -360,6 +396,27 @@
   const editBackdrop = $("edit-modal-backdrop");
   const editForm = $("edit-user-form");
   const editErrBox = $("edit-user-error");
+  const deleteModal = $("delete-user-modal");
+  const deleteCloseBtn = $("btn-close-delete-modal");
+  const deleteCancelBtn = $("btn-cancel-delete-modal");
+  const deleteBackdrop = $("delete-modal-backdrop");
+  const deleteMessage = $("delete-user-message");
+  const deleteConfirmBtn = $("btn-confirm-delete");
+  let pendingDelete = null;
+
+  if (deleteCloseBtn) deleteCloseBtn.addEventListener("click", closeDeleteModal);
+  if (deleteCancelBtn) deleteCancelBtn.addEventListener("click", closeDeleteModal);
+  if (deleteBackdrop) deleteBackdrop.addEventListener("click", closeDeleteModal);
+  if (deleteConfirmBtn) {
+    deleteConfirmBtn.addEventListener("click", async () => {
+      if (!pendingDelete) return;
+      const { id } = pendingDelete;
+      deleteConfirmBtn.disabled = true;
+      const deleted = await deleteUser(id);
+      deleteConfirmBtn.disabled = false;
+      if (deleted) closeDeleteModal();
+    });
+  }
 
   function closeEditModal() {
     if (!editModal) return;
@@ -390,7 +447,8 @@
     }
 
     // 角色設定 (僅開發者/總管理員可變更角色與指派主管)
-    const isSuper = currentRole === "developer" || currentRole === "super_admin";
+    const isSuper =
+      currentRole === "developer" || currentRole === "super_admin";
     const groupRole = $("group-edit-role");
     const selectRole = $("select-edit-role");
     const groupMgr = $("group-edit-manager");
@@ -490,8 +548,11 @@
       const lineUserId = $("inp-edit-line-id").value.trim();
       const lineTokenInput = $("inp-edit-line-token").value;
       const lineNotifyEnabled = $("chk-edit-line-enabled").checked;
-      const lineNotifyAll = $("chk-edit-line-all") ? $("chk-edit-line-all").checked : true;
-      const isSuper = currentRole === "developer" || currentRole === "super_admin";
+      const lineNotifyAll = $("chk-edit-line-all")
+        ? $("chk-edit-line-all").checked
+        : true;
+      const isSuper =
+        currentRole === "developer" || currentRole === "super_admin";
 
       const payload = {
         display_name: displayName,
@@ -509,7 +570,9 @@
           payload.role = $("select-edit-role").value;
         }
         if (payload.role === "driver" || !payload.role) {
-          payload.manager_id = $("select-edit-manager") ? $("select-edit-manager").value : null;
+          payload.manager_id = $("select-edit-manager")
+            ? $("select-edit-manager").value
+            : null;
         } else {
           payload.manager_id = null;
         }
@@ -555,7 +618,9 @@
     }
   });
 
-  const manageLink = document.querySelector('.dash-bookmark [dash-page="manage"]');
+  const manageLink = document.querySelector(
+    '.dash-bookmark [dash-page="manage"]',
+  );
   if (manageLink) {
     manageLink.addEventListener("click", () => {
       setTimeout(loadUsers, 50);
