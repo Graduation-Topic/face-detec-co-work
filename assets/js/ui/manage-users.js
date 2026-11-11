@@ -74,7 +74,7 @@
       renderUserTable(allUsers);
     } catch (err) {
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="8" class="table-empty" style="color:var(--color-danger)!important">載入失敗: ${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="table-empty" style="color:var(--color-danger)!important">載入失敗: ${err.message}</td></tr>`;
       }
     }
   }
@@ -140,7 +140,7 @@
 
     if (!users || users.length === 0) {
       tbody.innerHTML =
-        '<tr><td colspan="8" class="table-empty">目前無符合條件的員工紀錄</td></tr>';
+        '<tr><td colspan="9" class="table-empty">目前無符合條件的員工紀錄</td></tr>';
       return;
     }
 
@@ -191,8 +191,12 @@
             : '<span style="color:var(--color-text-muted);font-size:12px;">—</span>';
 
         const lineBadge = u.has_line
-          ? '<span class="line-badge bound" title="已綁定 LINE 推播">● 已綁定</span>'
-          : '<span class="line-badge unbound" title="未綁定 LINE">○ 未綁定</span>';
+          ? '<span class="line-badge bound" title="已綁定 LINE 推播">已綁定</span>'
+          : '<span class="line-badge unbound" title="未綁定 LINE">未綁定</span>';
+        const statusBadge =
+          u.is_active === false
+            ? '<span class="status-badge inactive">未啟用</span>'
+            : '<span class="status-badge active">啟用</span>';
 
         return `
           <tr>
@@ -200,6 +204,7 @@
             <td class="manage-username"><strong>${u.username}</strong></td>
             <td class="manage-display-name">${u.display_name || "—"}</td>
             <td class="manage-role">${getRoleBadge(u.role)}</td>
+            <td class="manage-status">${statusBadge}</td>
             <td class="manage-manager">${u.manager_name || "—"}</td>
             <td class="manage-line">${lineBadge}</td>
             <td class="manage-created-at">${formatTime(u.created_at)}</td>
@@ -241,7 +246,7 @@
   function openDeleteModal(id, name) {
     if (!deleteModal || !deleteMessage) return;
     pendingDelete = { id, name };
-    deleteMessage.textContent = `確定要刪除帳號「${name}」(ID: ${id})？`;
+    deleteMessage.textContent = `確定要永久刪除帳號「${name}」(ID: ${id})？ \n 刪除後無法復原。`;
     deleteModal.classList.remove("hidden");
   }
 
@@ -256,7 +261,7 @@
         throw new Error(data.message || "刪除失敗");
       }
       showActionMsg(data.message || "刪除成功", "success");
-      loadUsers();
+      window.location.reload();
       return true;
     } catch (err) {
       showActionMsg(err.message, "error");
@@ -277,14 +282,31 @@
         const idStr = String(u.id);
         const nameStr = (u.display_name || "").toLowerCase();
         const userStr = (u.username || "").toLowerCase();
-        const roleStr = (u.role || "").toLowerCase();
+        const roleLabel =
+          {
+            developer: "開發者",
+            super_admin: "總管理員",
+            admin: "管理員",
+            driver: "駕駛",
+          }[u.role] ||
+          u.role ||
+          "";
+        const roleStr = `${u.role || ""} ${roleLabel}`.toLowerCase();
         const mgrStr = (u.manager_name || "").toLowerCase();
+        const statusStr = u.is_active === false ? "未啟用" : "啟用";
+        const statusMatches =
+          q === "啟用"
+            ? u.is_active !== false
+            : q === "未啟用"
+              ? u.is_active === false
+              : statusStr.includes(q);
         return (
           idStr.includes(q) ||
           nameStr.includes(q) ||
           userStr.includes(q) ||
           roleStr.includes(q) ||
-          mgrStr.includes(q)
+          mgrStr.includes(q) ||
+          statusMatches
         );
       });
       renderUserTable(filtered);
@@ -404,9 +426,12 @@
   const deleteConfirmBtn = $("btn-confirm-delete");
   let pendingDelete = null;
 
-  if (deleteCloseBtn) deleteCloseBtn.addEventListener("click", closeDeleteModal);
-  if (deleteCancelBtn) deleteCancelBtn.addEventListener("click", closeDeleteModal);
-  if (deleteBackdrop) deleteBackdrop.addEventListener("click", closeDeleteModal);
+  if (deleteCloseBtn)
+    deleteCloseBtn.addEventListener("click", closeDeleteModal);
+  if (deleteCancelBtn)
+    deleteCancelBtn.addEventListener("click", closeDeleteModal);
+  if (deleteBackdrop)
+    deleteBackdrop.addEventListener("click", closeDeleteModal);
   if (deleteConfirmBtn) {
     deleteConfirmBtn.addEventListener("click", async () => {
       if (!pendingDelete) return;

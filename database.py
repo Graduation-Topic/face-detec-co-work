@@ -438,16 +438,25 @@ def update_user(
 
 
 def delete_user(user_id: Any) -> bool:
-    """刪除使用者 (優先軟刪除停用)"""
+    """永久刪除使用者資料。"""
     uid_str = str(user_id).strip()
     if is_direct_db_configured():
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
-                cursor.execute('UPDATE public.users SET is_active = FALSE, updated_at = NOW() WHERE uuid::text = %s', (uid_str,))
-        return True
+                cursor.execute(
+                    "DELETE FROM public.users WHERE uuid::text = %s",
+                    (uid_str,),
+                )
+                return cursor.rowcount > 0
     elif supabase:
-        supabase.table("users").update({"is_active": False}).eq("uuid", uid_str).execute()
-        return True
+        response = (
+            supabase.table("users")
+            .delete()
+            .eq("uuid", uid_str)
+            .select("uuid")
+            .execute()
+        )
+        return bool(response.data)
     return False
 
 

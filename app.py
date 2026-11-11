@@ -658,19 +658,23 @@ def api_admin_list_users():
         # 建立管理者名稱查找表
         managers_dict = {}
         try:
-            for m in list_users(role="admin"):
+            for m in list_users(role="admin", include_inactive=True):
                 managers_dict[m.id] = m.display_name or m.username
-            for m in list_users(role="developer"):
+            for m in list_users(role="developer", include_inactive=True):
                 managers_dict[m.id] = m.display_name or m.username
         except Exception:
             pass
 
         if current_role == "developer":
             # 開發者可以看到所有使用者
-            users = list_users()
+            users = list_users(include_inactive=True)
         else:
             # 一般管理員只能看到自己名下的駕駛
-            users = list_users(role="driver", manager_id=current_user_id)
+            users = list_users(
+                role="driver",
+                manager_id=current_user_id,
+                include_inactive=True,
+            )
 
         user_list = []
         for u in users:
@@ -893,7 +897,8 @@ def api_admin_delete_user(user_id):
             if target.role != "driver" or target.manager_id != current_user_id:
                 return jsonify({"status": "error", "message": "您無權刪除此員工"}), 403
 
-        delete_user(user_id)
+        if not delete_user(user_id):
+            return jsonify({"status": "error", "message": "刪除帳號失敗，資料可能已不存在"}), 404
         return jsonify({"status": "success", "message": f"已刪除使用者：{target.username}"})
     except Exception as e:
         app.logger.error(f"[DB] delete_user error: {e}")

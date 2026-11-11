@@ -111,10 +111,14 @@
     passwordModal.classList.remove("hidden");
   }
 
-  if (openPasswordBtn) openPasswordBtn.addEventListener("click", openPasswordModal);
-  if (closePasswordBtn) closePasswordBtn.addEventListener("click", closePasswordModal);
-  if (cancelPasswordBtn) cancelPasswordBtn.addEventListener("click", closePasswordModal);
-  if (passwordBackdrop) passwordBackdrop.addEventListener("click", closePasswordModal);
+  if (openPasswordBtn)
+    openPasswordBtn.addEventListener("click", openPasswordModal);
+  if (closePasswordBtn)
+    closePasswordBtn.addEventListener("click", closePasswordModal);
+  if (cancelPasswordBtn)
+    cancelPasswordBtn.addEventListener("click", closePasswordModal);
+  if (passwordBackdrop)
+    passwordBackdrop.addEventListener("click", closePasswordModal);
 
   if (passwordForm) {
     passwordForm.addEventListener("submit", async (e) => {
@@ -205,7 +209,7 @@
     // 若為總管理員，顯示「接收所有車隊通報」選項
     const groupAll = $("group-my-line-all");
     const chkAll = $("chk-my-line-all");
-    if (st.role === "super_admin") {
+    if (st.role === "developer") {
       if (groupAll) groupAll.classList.remove("hidden");
       if (chkAll) chkAll.checked = st.line_notify_all !== false;
     } else {

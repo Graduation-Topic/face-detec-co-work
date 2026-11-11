@@ -299,6 +299,7 @@
                           <th class="manage-username">帳號</th>
                           <th class="manage-display-name">姓名</th>
                           <th class="manage-role">身分</th>
+                          <th class="manage-status">狀態</th>
                           <th class="manage-manager">主管</th>
                           <th>Line</th>
                           <th class="manage-created-at">建立時間</th>
@@ -307,7 +308,7 @@
                       </thead>
                       <tbody id="manage-user-tbody">
                         <tr>
-                          <td colspan="8" class="table-empty">載入中...</td>
+                          <td colspan="9" class="table-empty">載入中...</td>
                         </tr>
                       </tbody>
                     </table>
@@ -726,7 +727,7 @@
               id="inp-edit-line-token"
               placeholder="Channel Access Token"
             />
-            <small id="edit-token-hint" class="modal-form-hint"></small>
+            <small id="edit-token-hint" class="hint"></small>
           </div>
           <div class="modal-form-group modal-check-group">
             <label for="chk-edit-line-enabled">接收疲勞通報推播</label>
@@ -842,7 +843,7 @@
               id="inp-my-line-id"
               placeholder="LINE User ID or Group ID"
             />
-            <small class="modal-form-hint">
+            <small class="hint">
               可在 LINE Developers 後台、或透過專屬查詢 Bot 取得您的 User ID (U
               開頭共 33 字元)。
             </small>
@@ -854,7 +855,7 @@
               id="inp-my-line-token"
               placeholder="Channel Access Token"
             />
-            <small id="token-status-hint" class="modal-form-hint"></small>
+            <small id="token-status-hint" class="hint"></small>
           </div>
           <div class="modal-form-group modal-check-group">
             <label for="chk-my-line-enabled">接收疲勞通報推播</label>

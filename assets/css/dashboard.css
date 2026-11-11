@@ -417,8 +417,8 @@ body.dashboard-loading #alert-tbody {
 }
 
 .manage-user-id {
-  width: 320px;
-  max-width: 320px;
+  width: 260px;
+  max-width: 260px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -430,6 +430,15 @@ body.dashboard-loading #alert-tbody {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.manage-status {
+  white-space: nowrap;
+}
+
+.manage-status .status-badge {
+  display: inline-flex;
+  width: fit-content;
 }
 
 .manage-actions {
@@ -803,7 +812,7 @@ body.dashboard-loading #alert-tbody {
   font-weight: 500;
 }
 
-.modal-form-hint {
+.hint {
   margin-top: 2px;
   color: var(--color-text-secondary);
   font-size: 12px;
@@ -1074,10 +1083,9 @@ body.dashboard-loading #alert-tbody {
 /* 連接/未連接圖示 */
 .status-badge {
   display: flex;
+  width: auto;
   justify-content: center;
   align-items: center;
-  padding: 3px 6px;
-  border-radius: 999px;
   font-family: var(--font-inter);
   background-color: transparent;
   font-size: 12px;
@@ -1088,12 +1096,10 @@ body.dashboard-loading #alert-tbody {
 
 .status-badge.inactive {
   color: var(--color-danger);
-  border: 1px solid var(--color-danger);
 }
 
 .status-badge.active {
   color: var(--color-success);
-  border: 1px solid var(--color-success);
 }
 
 /* 切換控制 */
