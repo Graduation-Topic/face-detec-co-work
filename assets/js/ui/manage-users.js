@@ -1,6 +1,6 @@
 /**
  * manage-users.js — 後台「員工管理」模組 (RBAC 角色管理)
- * 支援：總管理員 (可檢視/建立/修改所有人員與管理員資料) 與 一般管理員 (僅檢視/建立/修改自己名下的駕駛員)
+ * 支援：開發者 / 總管理員 (可檢視/建立/修改所有人員與管理員資料) 與 一般管理員 (僅檢視/建立/修改自己名下的駕駛)
  */
 
 (function () {
@@ -32,8 +32,8 @@
   }
 
   function getRoleBadge(role) {
-    if (role === "super_admin") {
-      return '<span class="role-badge role-badge-super">總管理員</span>';
+    if (role === "developer" || role === "super_admin") {
+      return '<span class="role-badge role-badge-developer">開發者</span>';
     }
     if (role === "admin") {
       return '<span class="role-badge role-badge-admin">車隊管理員</span>';
@@ -79,8 +79,9 @@
     }
   }
 
-  // ===== 載入管理員清單 (供總管理員指派所屬主管) =====
+  // ===== 載入管理員清單 (供開發者/總管理員指派所屬主管) =====
   async function loadManagers() {
+    if (currentRole !== "developer" && currentRole !== "super_admin") return;
     try {
       const res = await fetch("/api/admin/managers");
       if (!res.ok) return;
@@ -90,11 +91,11 @@
       // 填充新增 Modal 的主管下拉選單
       const selectMgr = $("select-new-manager");
       if (selectMgr) {
-        selectMgr.innerHTML = '<option value="">(無 / 直屬總管理員)</option>';
+        selectMgr.innerHTML = '<option value="">無</option>';
         allManagers.forEach((m) => {
           const opt = document.createElement("option");
           opt.value = m.id;
-          opt.textContent = `${m.display_name || m.username} (${m.role === "super_admin" ? "總管理員" : "管理員"})`;
+          opt.textContent = `${m.display_name || m.username} (${m.role === "developer" || m.role === "super_admin" ? "開發者" : "管理員"})`;
           selectMgr.appendChild(opt);
         });
       }
@@ -102,11 +103,11 @@
       // 填充編輯 Modal 的主管下拉選單
       const selectEditMgr = $("select-edit-manager");
       if (selectEditMgr) {
-        selectEditMgr.innerHTML = '<option value="">(無 / 直屬總管理員)</option>';
+        selectEditMgr.innerHTML = '<option value="">無</option>';
         allManagers.forEach((m) => {
           const opt = document.createElement("option");
           opt.value = m.id;
-          opt.textContent = `${m.display_name || m.username} (${m.role === "super_admin" ? "總管理員" : "管理員"})`;
+          opt.textContent = `${m.display_name || m.username} (${m.role === "developer" || m.role === "super_admin" ? "開發者" : "管理員"})`;
           selectEditMgr.appendChild(opt);
         });
       }
@@ -118,13 +119,13 @@
     const groupRole = $("group-new-role");
     const groupManager = $("group-new-manager");
     const selectRole = $("select-new-role");
+    const isSuper = currentRole === "developer" || currentRole === "super_admin";
 
-    if (currentRole === "super_admin") {
+    if (isSuper) {
       if (groupRole) groupRole.classList.remove("hidden");
       if (groupManager) groupManager.classList.remove("hidden");
       loadManagers();
     } else {
-      // 一般管理員只能建 driver，隱藏選擇角色與主管
       if (groupRole) groupRole.classList.add("hidden");
       if (groupManager) groupManager.classList.add("hidden");
       if (selectRole) selectRole.value = "driver";
@@ -145,22 +146,20 @@
     tbody.innerHTML = users
       .map((u) => {
         const isSelf = u.id === currentUserId;
-        const canEdit =
-          currentRole === "super_admin"
-            ? true
-            : u.role === "driver" && u.manager_id === currentUserId;
-
-        const canDelete =
-          currentRole === "super_admin"
-            ? !isSelf
-            : u.role === "driver" && u.manager_id === currentUserId;
+        const isSuper = currentRole === "developer" || currentRole === "super_admin";
+        const canEdit = isSuper ? true : u.role === "driver" && u.manager_id === currentUserId;
+        const canDelete = isSuper ? !isSelf : u.role === "driver" && u.manager_id === currentUserId;
 
         const editBtn = canEdit
-          ? `<button class="btn-user-edit cursor-pointer" data-id="${u.id}">編輯</button>`
+          ? `<button type="button" class="btn-user-edit cursor-pointer" data-id="${u.id}" title="編輯">編輯</button>`
           : "";
 
         const deleteBtn = canDelete
-          ? `<button class="btn-user-delete cursor-pointer" data-id="${u.id}" data-name="${u.display_name || u.username}">刪除</button>`
+          ? `<button type="button" class="btn-user-delete cursor-pointer" data-id="${u.id}" data-name="${u.display_name || u.username}" aria-label="刪除 ${u.display_name || u.username}" title="刪除">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M21 5h-5v-.25A2.755 2.755 0 0 0 13.25 2h-2.5A2.755 2.755 0 0 0 8 4.75V5H3v1.5h1v12.75A2.755 2.755 0 0 0 6.75 22h10.5A2.755 2.755 0 0 0 20 19.25V6.5h1V5ZM9.5 4.75c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25V5h-5v-.25Zm9 14.5c0 .69-.56 1.25-1.25 1.25H6.75c-.69 0-1.25-.56-1.25-1.25V6.5h13v12.75Zm-8-9.75H9v8h1.5v-8Zm3 0H15v8h-1.5v-8Z" fill="#ff453a"/>
+              </svg>
+            </button>`
           : "";
 
         const actionBtns =
@@ -174,14 +173,14 @@
 
         return `
           <tr>
-            <td>${u.id}</td>
-            <td><strong>${u.username}</strong></td>
-            <td>${u.display_name || "—"}</td>
-            <td>${getRoleBadge(u.role)}</td>
-            <td>${u.manager_name || "—"}</td>
-            <td>${lineBadge}</td>
-            <td>${formatTime(u.created_at)}</td>
-            <td>${actionBtns}</td>
+            <td class="manage-user-id">${u.id}</td>
+            <td class="manage-username"><strong>${u.username}</strong></td>
+            <td class="manage-display-name">${u.display_name || "—"}</td>
+            <td class="manage-role">${getRoleBadge(u.role)}</td>
+            <td class="manage-manager">${u.manager_name || "—"}</td>
+            <td class="manage-line">${lineBadge}</td>
+            <td class="manage-created-at">${formatTime(u.created_at)}</td>
+            <td class="manage-actions">${actionBtns}</td>
           </tr>
         `;
       })
@@ -210,7 +209,7 @@
 
   // ===== 刪除員工 =====
   async function deleteUser(id, name) {
-    if (!confirm(`確定要刪除員工帳號「${name}」(ID: ${id}) 嗎？此操作無法復原。`)) {
+    if (!confirm(`確定刪除帳號「${name}」(ID: ${id})？`)) {
       return;
     }
 
@@ -390,7 +389,8 @@
       selActive.value = user.is_active === false ? "false" : "true";
     }
 
-    // 角色設定 (僅總管理員可變更角色與指派主管)
+    // 角色設定 (僅開發者/總管理員可變更角色與指派主管)
+    const isSuper = currentRole === "developer" || currentRole === "super_admin";
     const groupRole = $("group-edit-role");
     const selectRole = $("select-edit-role");
     const groupMgr = $("group-edit-manager");
@@ -398,19 +398,19 @@
     const groupLineAll = $("group-edit-line-all");
     const groupLineToken = $("group-edit-line-token");
 
-    if (currentRole === "super_admin") {
+    if (isSuper) {
       if (groupRole) groupRole.classList.remove("hidden");
       if (selectRole) {
         selectRole.value = user.role || "driver";
-        selectRole.disabled = user.id === currentUserId; // 總管理員無法降級自己
+        selectRole.disabled = user.id === currentUserId; // 開發者/總管理員無法降級自己
       }
 
       if (selectMgr) {
-        selectMgr.innerHTML = '<option value="">(無 / 直屬總管理員)</option>';
+        selectMgr.innerHTML = '<option value="">無</option>';
         allManagers.forEach((m) => {
           const opt = document.createElement("option");
           opt.value = m.id;
-          opt.textContent = `${m.display_name || m.username} (${m.role === "super_admin" ? "總管理員" : "管理員"})`;
+          opt.textContent = `${m.display_name || m.username} (${m.role === "developer" || m.role === "super_admin" ? "開發者" : "管理員"})`;
           selectMgr.appendChild(opt);
         });
         selectMgr.value = user.manager_id || "";
@@ -427,7 +427,6 @@
       if (groupLineAll) groupLineAll.classList.remove("hidden");
       if (groupLineToken) groupLineToken.classList.remove("hidden");
     } else {
-      // 一般管理員不可改角色、主管與全域推播
       if (groupRole) groupRole.classList.add("hidden");
       if (groupMgr) groupMgr.classList.add("hidden");
       if (groupLineAll) groupLineAll.classList.add("hidden");
@@ -492,6 +491,7 @@
       const lineTokenInput = $("inp-edit-line-token").value;
       const lineNotifyEnabled = $("chk-edit-line-enabled").checked;
       const lineNotifyAll = $("chk-edit-line-all") ? $("chk-edit-line-all").checked : true;
+      const isSuper = currentRole === "developer" || currentRole === "super_admin";
 
       const payload = {
         display_name: displayName,
@@ -504,7 +504,7 @@
         payload.password = password;
       }
 
-      if (currentRole === "super_admin") {
+      if (isSuper) {
         if ($("select-edit-role") && !$("select-edit-role").disabled) {
           payload.role = $("select-edit-role").value;
         }
@@ -515,7 +515,6 @@
         }
         payload.line_notify_all = lineNotifyAll;
 
-        // 若輸入框留空，代表不更動 token；若輸入空格則表示清空
         if (lineTokenInput === "") {
           payload.line_token = "__UNCHANGED__";
         } else {

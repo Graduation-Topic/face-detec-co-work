@@ -4,7 +4,7 @@ line_notifier.py — LINE Messaging API 推播通知模組
 支援：
 1. 每個帳號各自綁定不同的 LINE User ID / Group ID。
 2. 每個帳號可自訂 Channel Access Token（亦可使用全域預設 Token）。
-3. 疲勞事件升級時，依車隊主管與總管理員名單進行推播。
+3. 疲勞事件升級時，依主管與總管理員名單進行推播。
 """
 
 import json
@@ -128,9 +128,9 @@ def format_fatigue_alert_message(
         f"━━━━━━━━━━━━━━━━\n"
         f"駕駛人員：{driver_name} ({driver_username})\n"
         f"警報原因：{reason}\n"
-        f"疲勞指數：{score:.1f}% (嚴重疲勞)\n"
+        f"疲勞分數：{score:.1f}% (嚴重疲勞)\n"
         f"視窗累積：{window_count} 次 (已觸發通報門檻)\n"
         f"發生時間：{time_str}\n"
         f"━━━━━━━━━━━━━━━━\n"
-        f"請車隊管理員立即確認駕駛員狀態並確保安全！"
+        f"請管理員立即確認駕駛員狀態並確保安全！"
     )

@@ -12,7 +12,8 @@ if not IS_RENDER:
     from dotenv import load_dotenv
     load_dotenv()
 
-from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, session, url_for
+from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, url_for
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from alert_manager import AlertManager
@@ -45,6 +46,8 @@ app = Flask(
 )
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me-in-production")
+auth_serializer = URLSafeTimedSerializer(app.secret_key, salt="face-detection-auth")
+AUTH_TOKEN_MAX_AGE = 86400
 
 ALLOWED_FATIGUE_LEVELS = {"Normal", "Mild", "Severe"}
 
@@ -65,10 +68,33 @@ except Exception as _db_init_err:
 # ========== 工具函式 ==========
 
 def _require_admin():
-    """若 session 不是 admin 或 super_admin，回傳 401 JSON；否則回傳 None（代表通過）"""
-    role = session.get("role")
-    if role not in ("admin", "super_admin"):
+    identity = _get_identity()
+    role = identity.get("role") if identity else None
+    if role not in ("admin", "developer", "super_admin"):
         return jsonify({"status": "error", "message": "請先以管理員身份登入"}), 401
+    return None
+
+
+def _get_identity():
+    """取得目前分頁的登入身份，優先使用 Authorization Bearer Token，相容 Flask session。"""
+    authorization = request.headers.get("Authorization", "")
+    if authorization.startswith("Bearer "):
+        token = authorization[7:].strip()
+        if token:
+            try:
+                identity = auth_serializer.loads(token, max_age=AUTH_TOKEN_MAX_AGE)
+                if isinstance(identity, dict) and identity.get("user_id"):
+                    return identity
+            except (BadSignature, SignatureExpired):
+                pass
+
+    if session.get("user_id"):
+        return {
+            "user_id": session.get("user_id"),
+            "username": session.get("username"),
+            "display_name": session.get("display_name"),
+            "role": session.get("role"),
+        }
     return None
 
 
@@ -94,10 +120,6 @@ def demo():
 @app.route("/login")
 @app.route("/login.html")
 def login():
-    if session.get("role") in ("admin", "super_admin"):
-        return redirect(url_for("dashboard", page="overview"))
-    elif session.get("role") == "driver":
-        return redirect(url_for("demo"))
     response = app.make_response(render_template("login.html"))
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     return response
@@ -116,8 +138,6 @@ def docs():
 @app.route("/dashboard.html")
 @app.route("/dashboard/<page>")
 def dashboard(page="overview"):
-    if session.get("role") not in ("admin", "super_admin"):
-        return redirect(url_for("login"))
     allowed_pages = [
         "overview",
         "manage",
@@ -166,13 +186,15 @@ def api_login():
             app.logger.warning(f"[AUTH] Auto-upgrade password hash failed: {update_err}")
 
     if is_valid_pw:
-        session.clear()
-        session["user_id"] = user.id
-        session["username"] = user.username
-        session["display_name"] = user.display_name or user.username
-        session["role"] = user.role
+        token = auth_serializer.dumps({
+            "user_id": user.id,
+            "username": user.username,
+            "display_name": user.display_name or user.username,
+            "role": user.role,
+        })
         return jsonify({
             "status": "ok",
+            "token": token,
             "role": user.role,
             "display_name": user.display_name,
         })
@@ -181,25 +203,24 @@ def api_login():
 
 @app.route("/logout")
 def logout():
-    session.clear()
     return redirect(url_for("login"))
 
 
 @app.route("/api/auth/logout", methods=["POST"])
 def api_logout():
-    session.clear()
     return jsonify({"status": "ok"})
 
 
 @app.route("/api/auth/me")
 def api_me():
-    if "user_id" in session:
+    identity = _get_identity()
+    if identity:
         return jsonify({
             "logged_in": True,
-            "id": session.get("user_id"),
-            "username": session.get("username"),
-            "display_name": session.get("display_name"),
-            "role": session.get("role"),
+            "id": identity.get("user_id"),
+            "username": identity.get("username"),
+            "display_name": identity.get("display_name"),
+            "role": identity.get("role"),
         })
     return jsonify({"logged_in": False})
 
@@ -209,7 +230,8 @@ def api_me():
 @app.route("/api/user/line-settings", methods=["GET"])
 def api_get_line_settings():
     """取得當前登入使用者的 LINE 綁定設定"""
-    user_id = session.get("user_id")
+    identity = _get_identity()
+    user_id = identity.get("user_id") if identity else None
     if not user_id:
         return jsonify({"status": "error", "message": "請先登入"}), 401
 
@@ -237,7 +259,8 @@ def api_get_line_settings():
 @app.route("/api/user/line-settings", methods=["POST"])
 def api_save_line_settings():
     """儲存當前登入使用者的 LINE 綁定設定"""
-    user_id = session.get("user_id")
+    identity = _get_identity()
+    user_id = identity.get("user_id") if identity else None
     if not user_id:
         return jsonify({"status": "error", "message": "請先登入"}), 401
 
@@ -258,7 +281,7 @@ def api_save_line_settings():
         kwargs["line_token"] = str(line_token).strip() or None
     if line_notify_enabled is not None:
         kwargs["line_notify_enabled"] = bool(line_notify_enabled)
-    if line_notify_all is not None and user.role == "super_admin":
+    if line_notify_all is not None and user.role in ("developer", "super_admin"):
         kwargs["line_notify_all"] = bool(line_notify_all)
 
     try:
@@ -282,7 +305,8 @@ def api_save_line_settings():
 @app.route("/api/user/line-settings/test", methods=["POST"])
 def api_test_line_message():
     """發送 LINE 測試訊息"""
-    user_id = session.get("user_id")
+    identity = _get_identity()
+    user_id = identity.get("user_id") if identity else None
     if not user_id:
         return jsonify({"status": "error", "message": "請先登入"}), 401
 
@@ -417,7 +441,8 @@ def reset_state():
 @app.route("/api/alert", methods=["POST"])
 def api_record_alert():
     """接收前端嚴重警告事件，進行滑動視窗累計、通報判定，並寫入資料庫"""
-    user_uuid = session.get("user_id")
+    identity = _get_identity()
+    user_uuid = identity.get("user_id") if identity else None
     if not user_uuid:
         return jsonify({"status": "error", "message": "請先登入後再開始偵測"}), 401
 
@@ -514,9 +539,9 @@ def api_record_alert():
                     except Exception as mgr_err:
                         app.logger.warning(f"[LINE] 通報主管失敗: {mgr_err}")
 
-                # 4.2 通報總管理員 (若 line_notify_all 開啟，或該駕駛員未指派直屬主管)
+                # 4.2 通報總管理員 / 開發者 (若 line_notify_all 開啟，或該駕駛員未指派直屬主管)
                 try:
-                    super_admins = list_users(role="super_admin")
+                    super_admins = list_users(role="developer") + list_users(role="super_admin")
                     for sa in super_admins:
                         if not sa.is_active or not sa.line_notify_enabled or not sa.line_user_id:
                             continue
@@ -562,12 +587,13 @@ def api_admin_alerts():
     if not 1 <= limit <= 50:
         return jsonify({"status": "error", "message": "單頁最多顯示 50 筆"}), 400
 
-    current_role = session.get("role")
-    current_user_id = session.get("user_id")
+    identity = _get_identity()
+    current_role = identity.get("role")
+    current_user_id = identity.get("user_id")
 
     driver_ids = None
     if current_role == "admin":
-        # 一般管理員只能查看自己名下駕駛員的警報
+        # 一般管理員只能查看自己名下駕駛的警報
         try:
             my_drivers = list_users(role="driver", manager_id=current_user_id)
             driver_ids = [d.id for d in my_drivers]
@@ -599,8 +625,9 @@ def api_admin_list_users():
     if guard:
         return guard
 
-    current_role = session.get("role")
-    current_user_id = session.get("user_id")
+    identity = _get_identity()
+    current_role = identity.get("role")
+    current_user_id = identity.get("user_id")
 
     try:
         # 建立管理者名稱查找表
@@ -608,16 +635,16 @@ def api_admin_list_users():
         try:
             for m in list_users(role="admin"):
                 managers_dict[m.id] = m.display_name or m.username
-            for m in list_users(role="super_admin"):
+            for m in list_users(role="developer"):
                 managers_dict[m.id] = m.display_name or m.username
         except Exception:
             pass
 
-        if current_role == "super_admin":
-            # 總管理員可以看到所有使用者
+        if current_role == "developer":
+            # 開發者可以看到所有使用者
             users = list_users()
         else:
-            # 一般管理員只能看到自己名下的駕駛員
+            # 一般管理員只能看到自己名下的駕駛
             users = list_users(role="driver", manager_id=current_user_id)
 
         user_list = []
@@ -626,7 +653,7 @@ def api_admin_list_users():
             if u.manager_id:
                 item["manager_name"] = managers_dict.get(u.manager_id, f"管理員 #{u.manager_id}")
             else:
-                item["manager_name"] = "無 (直屬/管理者)"
+                item["manager_name"] = "無"
             user_list.append(item)
 
         return jsonify({
@@ -642,14 +669,14 @@ def api_admin_list_users():
 
 @app.route("/api/admin/managers", methods=["GET"])
 def api_admin_list_managers():
-    """獲取所有管理員列表（供總管理員指派所屬主管使用）"""
+    """獲取所有管理員列表（供開發者指派所屬主管使用）"""
     guard = _require_admin()
     if guard:
         return guard
 
     try:
         admins = list_users(role="admin")
-        supers = list_users(role="super_admin")
+        supers = list_users(role="developer")
         all_mgrs = admins + supers
         return jsonify({
             "status": "success",
@@ -669,13 +696,13 @@ def api_admin_list_managers():
 
 @app.route("/api/admin/users", methods=["POST"])
 def api_admin_create_user():
-    """建立新使用者 (模式 A: 後台管理員開通)"""
     guard = _require_admin()
     if guard:
         return guard
 
-    current_role = session.get("role")
-    current_user_id = session.get("user_id")
+    identity = _get_identity()
+    current_role = identity.get("role")
+    current_user_id = identity.get("user_id")
 
     data = request.get_json(silent=True) or {}
     username = str(data.get("username", "")).strip()
@@ -690,12 +717,12 @@ def api_admin_create_user():
         return jsonify({"status": "error", "message": "密碼長度至少需 4 個字元"}), 400
 
     # 權限驗證與角色分配
-    if current_role != "super_admin":
+    if current_role != "developer":
         # 一般管理員只能建立 driver，且 manager_id 強制為當前登入者
         requested_role = "driver"
         manager_id = current_user_id
     else:
-        # 總管理員可以建立 admin 或 driver
+        # 開發者可以建立 admin 或 driver
         if requested_role not in ("admin", "driver"):
             requested_role = "driver"
         
@@ -731,13 +758,15 @@ def api_admin_create_user():
 
 @app.route("/api/admin/users/<user_id>", methods=["PUT"])
 def api_admin_update_user(user_id):
-    """修改使用者資料 (總管理員可修改全部帳號資料；一般管理員僅可修改自己管轄名下的司機)"""
+    """修改使用者資料 (開發者/總管理員可修改全部帳號資料；一般管理員僅可修改自己管轄名下的司機)"""
     guard = _require_admin()
     if guard:
         return guard
 
-    current_role = session.get("role")
-    current_user_id = session.get("user_id")
+    identity = _get_identity()
+    current_role = identity.get("role") if identity else None
+    current_user_id = identity.get("user_id") if identity else None
+    is_super = current_role in ("developer", "super_admin")
 
     target = get_user_by_id(user_id)
     if not target:
@@ -746,7 +775,7 @@ def api_admin_update_user(user_id):
     data = request.get_json(silent=True) or {}
 
     # 權限檢查：一般管理員只能修改自己管轄名下的 driver
-    if current_role != "super_admin":
+    if not is_super:
         if target.role != "driver" or target.manager_id != current_user_id:
             return jsonify({"status": "error", "message": "您無權修改此員工資料"}), 403
 
@@ -773,13 +802,13 @@ def api_admin_update_user(user_id):
             return jsonify({"status": "error", "message": "無法停用自己目前的帳號"}), 400
         update_fields["is_active"] = is_active
 
-    # 4. 僅總管理員可修改的欄位 (身分角色、所屬主管、全域推播開關)
-    if current_role == "super_admin":
+    # 4. 僅開發者/總管理員可修改的欄位 (身分角色、所屬主管、全域推播開關)
+    if is_super:
         if "role" in data:
             requested_role = str(data["role"]).strip()
-            if requested_role in ("super_admin", "admin", "driver"):
-                if target.id == current_user_id and requested_role != "super_admin":
-                    return jsonify({"status": "error", "message": "總管理員無法變更自己的身分角色"}), 400
+            if requested_role in ("developer", "super_admin", "admin", "driver"):
+                if target.id == current_user_id and requested_role not in ("developer", "super_admin"):
+                    return jsonify({"status": "error", "message": "開發者無法變更自己的身分角色"}), 400
                 update_fields["role"] = requested_role
 
         if "manager_id" in data:
@@ -795,7 +824,7 @@ def api_admin_update_user(user_id):
         raw_luid = data["line_user_id"]
         update_fields["line_user_id"] = str(raw_luid).strip() if (raw_luid and str(raw_luid).strip()) else None
 
-    if "line_token" in data and current_role == "super_admin":
+    if "line_token" in data and is_super:
         raw_token = data["line_token"]
         if raw_token != "__UNCHANGED__":
             update_fields["line_token"] = str(raw_token).strip() if (raw_token and str(raw_token).strip()) else None
@@ -822,8 +851,9 @@ def api_admin_delete_user(user_id):
     if guard:
         return guard
 
-    current_role = session.get("role")
-    current_user_id = session.get("user_id")
+    identity = _get_identity()
+    current_role = identity.get("role")
+    current_user_id = identity.get("user_id")
 
     if user_id == current_user_id:
         return jsonify({"status": "error", "message": "無法刪除目前登入的自己帳號"}), 400
@@ -834,7 +864,7 @@ def api_admin_delete_user(user_id):
             return jsonify({"status": "error", "message": "找不到該使用者"}), 404
 
         # 權限驗證：一般管理員只能刪除自己管轄名下的 driver
-        if current_role != "super_admin":
+        if current_role != "developer":
             if target.role != "driver" or target.manager_id != current_user_id:
                 return jsonify({"status": "error", "message": "您無權刪除此員工"}), 403
 

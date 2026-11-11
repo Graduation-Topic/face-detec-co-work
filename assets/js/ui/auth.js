@@ -23,7 +23,8 @@ form.addEventListener("submit", async (e) => {
     const data = await res.json();
 
     if (res.ok && data.status === "ok") {
-      if (data.role === "admin" || data.role === "super_admin") {
+      window.faceDetectionAuth.setToken(data.token);
+      if (data.role === "admin" || data.role === "developer") {
         window.location.href = "/dashboard/overview";
       } else {
         window.location.href = "/demo";

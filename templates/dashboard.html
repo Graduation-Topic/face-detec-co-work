@@ -24,6 +24,7 @@
     />
 
     <script src="/assets/js/ds-table/table.js" defer></script>
+    <script src="/assets/js/ui/session-browser.js"></script>
     <script src="/assets/js/ui/dashboard-page-switch.js" defer></script>
     <script src="/assets/js/ui/manage-users.js" defer></script>
     <script src="/assets/js/ui/dashboard-settings.js" defer></script>
@@ -126,7 +127,7 @@
 
               <div class="action-bar">
                 <button id="btn-reset" class="dash-btn dash-btn-warning">
-                  重置警報視窗
+                  重置警報
                 </button>
               </div>
 
@@ -167,12 +168,12 @@
                   <table class="alert-table">
                     <thead>
                       <tr>
-                        <th>時間</th>
-                        <th>userID</th>
-                        <th>原因</th>
-                        <th>疲勞分數</th>
-                        <th>視窗計數</th>
-                        <th>通報</th>
+                        <th class="alert-time">時間</th>
+                        <th class="alert-user-id">userID</th>
+                        <th class="alert-reason">原因</th>
+                        <th class="alert-score">疲勞分數</th>
+                        <th class="alert-window-count">視窗計數</th>
+                        <th class="alert-escalated">通報</th>
                       </tr>
                     </thead>
                     <tbody id="alert-tbody">
@@ -261,7 +262,7 @@
               </div>
 
               <div class="dash-manage-board">
-                <div class="manage-board-header">
+                <div class="manage-board-header user-select-none">
                   <input
                     type="text"
                     id="search-user"
@@ -291,17 +292,17 @@
                 </div>
                 <div class="manage-viewer" id="manage-viewer">
                   <div class="table-wrapper">
-                    <table class="alert-table" id="manage-user-table">
+                    <table class="manage-user-table" id="manage-user-table">
                       <thead>
                         <tr>
-                          <th>ID</th>
-                          <th>帳號</th>
-                          <th>姓名</th>
-                          <th>身分角色</th>
-                          <th>所屬主管</th>
-                          <th>LINE 狀態</th>
-                          <th>建立時間</th>
-                          <th>操作</th>
+                          <th class="manage-user-id">ID</th>
+                          <th class="manage-username">帳號</th>
+                          <th class="manage-display-name">姓名</th>
+                          <th class="manage-role">身分</th>
+                          <th class="manage-manager">主管</th>
+                          <th >Line</th>
+                          <th class="manage-created-at">建立時間</th>
+                          <th class="manage-actions">操作</th>
                         </tr>
                       </thead>
                       <tbody id="manage-user-tbody">
@@ -437,84 +438,106 @@
       </div>
     </main>
 
-    <!-- 新增員工彈窗 Modal (模式 A: 後台管理員開通) -->
     <div id="add-user-modal" class="dash-modal hidden">
       <div class="dash-modal-backdrop" id="modal-backdrop"></div>
       <div class="dash-modal-box">
         <div class="dash-modal-header">
           <h2 class="dash-modal-title">新增員工帳號</h2>
-          <button type="button" id="btn-close-modal" class="btn-close-modal cursor-pointer" aria-label="關閉">&times;</button>
+          <button
+            type="button"
+            id="btn-close-modal"
+            class="btn-close-modal cursor-pointer"
+            aria-label="關閉"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z"
+                fill="#ffffff"
+              />
+            </svg>
+          </button>
         </div>
         <form id="add-user-form" autocomplete="off">
           <div class="modal-form-group">
-            <label for="inp-new-username">登入帳號 *</label>
-            <input type="text" id="inp-new-username" required placeholder="例如：driver01" />
+            <label for="inp-new-username">帳號*</label>
+            <input
+              type="text"
+              id="inp-new-username"
+              autocomplete="username"
+              required
+              placeholder="帳號"
+            />
           </div>
           <div class="modal-form-group">
-            <label for="inp-new-name">員工姓名 / 顯示名稱 *</label>
-            <input type="text" id="inp-new-name" required placeholder="例如：王小明" />
+            <label for="inp-new-name">名稱*</label>
+            <input type="text" id="inp-new-name" required placeholder="名稱" />
           </div>
           <div class="modal-form-group">
-            <label for="inp-new-password">初始密碼 *</label>
-            <input type="password" id="inp-new-password" required placeholder="至少 4 位數" />
+            <label for="inp-new-password">密碼*</label>
+            <input
+              type="password"
+              id="inp-new-password"
+              autocomplete="new-password"
+              required
+              placeholder="至少 4 位數"
+            />
           </div>
           <div class="modal-form-group" id="group-new-role">
-            <label for="select-new-role">角色身分 *</label>
-            <select id="select-new-role">
-              <option value="driver" selected>🚗 駕駛員</option>
-              <option value="admin">👔 車隊管理員</option>
-            </select>
+            <label for="select-new-role">身分*</label>
+            <div class="modal-select-wrap">
+              <select id="select-new-role">
+                <option value="driver" selected>駕駛</option>
+                <option value="admin">管理員</option>
+              </select>
+              <svg
+                class="modal-select-chevron"
+                width="100%"
+                height="100%"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M18 15L12 9L6 15"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
           </div>
           <div class="modal-form-group" id="group-new-manager">
-            <label for="select-new-manager">指派所屬主管</label>
-            <select id="select-new-manager">
-              <option value="">(無 / 直屬總管理員)</option>
-            </select>
-          </div>
-          <div id="add-user-error" class="dash-msg dash-msg-error hidden"></div>
-          <div class="dash-modal-footer">
-            <button type="button" id="btn-cancel-modal" class="btn-modal-cancel cursor-pointer">取消</button>
-            <button type="submit" id="btn-submit-modal" class="btn-modal-submit cursor-pointer">確認建立</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- 編輯員工/帳號彈窗 Modal (總管理員修改全部帳號資料 / 主管修改司機) -->
-    <div id="edit-user-modal" class="dash-modal hidden">
-      <div class="dash-modal-backdrop" id="edit-modal-backdrop"></div>
-      <div class="dash-modal-box">
-        <div class="dash-modal-header">
-          <h2 class="dash-modal-title">編輯帳號資料</h2>
-          <button type="button" id="btn-close-edit-modal" class="btn-close-modal cursor-pointer" aria-label="關閉">&times;</button>
-        </div>
-        <form id="edit-user-form" autocomplete="off">
-          <input type="hidden" id="inp-edit-user-id" />
-          <div class="modal-form-group">
-            <label for="inp-edit-username">登入帳號 (唯讀)</label>
-            <input type="text" id="inp-edit-username" readonly disabled style="opacity: 0.6; cursor: not-allowed;" />
-          </div>
-          <div class="modal-form-group">
-            <label for="inp-edit-name">員工姓名 / 顯示名稱 *</label>
-            <input type="text" id="inp-edit-name" required placeholder="例如：王小明" />
-          </div>
-          <div class="modal-form-group">
-            <label for="inp-edit-password">重設密碼 (留空表示不變更)</label>
-            <input type="password" id="inp-edit-password" placeholder="若需更換請輸入至少 4 位數密碼" />
-          </div>
-          <div class="modal-form-group" id="group-edit-role">
-            <label for="select-edit-role">角色身分 *</label>
-            <select id="select-edit-role">
-              <option value="driver">🚗 駕駛員</option>
-              <option value="admin">👔 車隊管理員</option>
-              <option value="super_admin">👑 總管理員</option>
-            </select>
-          </div>
-          <div class="modal-form-group" id="group-edit-manager">
-            <label for="select-edit-manager">指派所屬主管</label>
-            <select id="select-edit-manager">
-              <option value="">(無 / 直屬總管理員)</option>
-            </select>
+            <label for="select-new-manager">所屬主管</label>
+            <div class="modal-select-wrap">
+              <select id="select-new-manager">
+                <option value="">無</option>
+              </select>
+              <svg
+                class="modal-select-chevron"
+                width="100%"
+                height="100%"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M18 15L12 9L6 15"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
           </div>
           <div class="modal-form-group" id="group-edit-active">
             <label for="select-edit-active">帳號啟用狀態</label>
@@ -590,8 +613,20 @@
           <div id="line-settings-success" class="dash-msg dash-msg-success hidden" style="margin-top:12px;"></div>
 
           <div class="dash-modal-footer">
-            <button type="button" id="btn-cancel-line-modal" class="btn-modal-cancel cursor-pointer">取消</button>
-            <button type="submit" id="btn-submit-line-modal" class="btn-modal-submit cursor-pointer">儲存設定</button>
+            <button
+              type="button"
+              id="btn-cancel-modal"
+              class="btn-modal-cancel cursor-pointer"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              id="btn-submit-modal"
+              class="btn-modal-submit cursor-pointer"
+            >
+              建立
+            </button>
           </div>
         </form>
       </div>

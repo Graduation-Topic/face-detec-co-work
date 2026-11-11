@@ -178,10 +178,15 @@ body {
 }
 
 .access-identity {
-  padding: 6px 8px;
+  display: flex;
+  width: auto;
+  height: auto;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 4px 6px;
   font-family: var(--font-inter);
   font-size: 12px;
-  font-weight: bold;
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border-hover);
   border-radius: 999px;

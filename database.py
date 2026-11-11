@@ -10,7 +10,14 @@ database.py - 混合架構資料庫模組 (Hybrid Database Module)
 import os
 from datetime import datetime, timezone
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
+try:
+    from typing import LiteralString
+except ImportError:
+    try:
+        from typing_extensions import LiteralString
+    except ImportError:
+        LiteralString = str  # type: ignore
 
 # PostgreSQL 原生連線驅動
 import psycopg
@@ -19,9 +26,8 @@ from psycopg.rows import DictRow, dict_row
 
 # Supabase 官方 SDK
 try:
-    from supabase import Client, create_client
+    from supabase import create_client
 except ImportError:
-    Client = Any  # type: ignore
     create_client = None  # type: ignore
 
 
@@ -39,7 +45,7 @@ SUPABASE_PROJECT_URL = os.environ.get("SUPABASE_PROJECT_URL", "").strip()
 SUPABASE_PUBLISHABLE_KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
 
 # 初始化 Supabase SDK Client（供 Storage / Realtime / 降級查詢使用）
-supabase: Optional[Client] = None
+supabase: Optional[Any] = None
 if SUPABASE_PROJECT_URL and SUPABASE_PUBLISHABLE_KEY and create_client is not None:
     try:
         supabase = create_client(SUPABASE_PROJECT_URL, SUPABASE_PUBLISHABLE_KEY)
@@ -175,7 +181,7 @@ def init_db() -> None:
         supabase.table("users").select("*").limit(1).execute()
         supabase.table("event").select("*").limit(1).execute()
     else:
-        raise RuntimeError("未設定 SUPABASE_DIRECT_CONNECTION_URL 亦未設定 SUPABASE_PROJECT_URL")
+        raise RuntimeError("未設定 SUPABASE_DIRECT_CONNECTION_URL 與 SUPABASE_PROJECT_URL 於 .env 中。")
 
 
 # ========== 使用者操作 (User Operations) ==========
@@ -276,7 +282,7 @@ def list_users(
         """
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(query, tuple(params))
+                cursor.execute(cast(LiteralString, query), tuple(params))
                 rows = cursor.fetchall()
         return [User.from_row(row) for row in rows]
     elif supabase:
@@ -402,7 +408,7 @@ def update_user(
         """
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(sql_query, tuple(params))
+                cursor.execute(cast(LiteralString, sql_query), tuple(params))
                 row = cursor.fetchone()
         return User.from_row(row) if row else None
     elif supabase:
@@ -483,10 +489,7 @@ def insert_event(data: Dict[str, Any]) -> AlertEvent:
 
 
 def list_recent_alerts(limit: int, driver_ids: Optional[List[Any]] = None) -> List[AlertEvent]:
-    """
-    查詢最新警報紀錄，使用 LEFT JOIN 同時取得司機帳號 (userID) 與名稱 (userName)。
-    支援依 driver_ids 篩選 (車隊管理員查看轄下司機)。
-    """
+
     if is_direct_db_configured():
         where_sql = ""
         params: List[Any] = []
@@ -512,7 +515,7 @@ def list_recent_alerts(limit: int, driver_ids: Optional[List[Any]] = None) -> Li
 
         with _connect_dict() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(query, tuple(params))
+                cursor.execute(cast(LiteralString, query), tuple(params))
                 rows = cursor.fetchall()
         return [AlertEvent.from_row(row) for row in rows]
     elif supabase:
