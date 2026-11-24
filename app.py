@@ -1,7 +1,9 @@
 import math
 import os
+import threading
 import time
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 IS_RENDER = os.environ.get("RENDER") == "true"
 
@@ -59,11 +61,25 @@ AUTH_TOKEN_MAX_AGE = 86400
 ALLOWED_FATIGUE_LEVELS = {"Normal", "Mild", "Severe"}
 
 state = State(fps=Config.FPS, window_sec=Config.WINDOW_SEC)
-alert_manager = AlertManager(
-    window_sec=Config.ALERT_WINDOW_SEC,
-    trigger_count=Config.ALERT_TRIGGER_COUNT,
-    notify_cooldown_sec=Config.ALERT_COOLDOWN_NOTIFY_SEC,
-)
+
+# 多駕駛員獨立警報管理器池 (Per-Driver AlertManager Pool)
+_driver_alert_managers: Dict[str, AlertManager] = {}
+_alert_managers_lock = threading.Lock()
+
+def get_user_alert_manager(user_id: Optional[str] = None) -> AlertManager:
+    """獲取指定使用者的獨立警報管理器實例（確保不同駕駛員互不干擾）"""
+    key = str(user_id or "default")
+    with _alert_managers_lock:
+        if key not in _driver_alert_managers:
+            _driver_alert_managers[key] = AlertManager(
+                window_sec=Config.ALERT_WINDOW_SEC,
+                trigger_count=Config.ALERT_TRIGGER_COUNT,
+                notify_cooldown_sec=Config.ALERT_COOLDOWN_NOTIFY_SEC,
+            )
+        return _driver_alert_managers[key]
+
+# 預設單例（相容舊版呼叫）
+alert_manager = get_user_alert_manager("default")
 
 # 啟動時確認 Supabase 資料表可用
 try:
@@ -543,8 +559,16 @@ def update_state():
 
 @app.route("/api/state/reset", methods=["POST"])
 def reset_state():
+    """司機端重置畫面數據；僅管理員身分才同步清除後台警報與冷卻計時"""
+    identity = _get_identity()
+    user_uuid = identity.get("user_id") if identity else None
+    role = identity.get("role") if identity else "driver"
+
     state.reset_metrics()
-    alert_manager.reset()
+    # 司機無法擅自解除後台警報，僅有管理員身分才能重置後端通報狀態
+    if role in ("admin", "developer"):
+        get_user_alert_manager(user_uuid).reset()
+
     return jsonify(state.snapshot())
 
 
@@ -582,8 +606,9 @@ def api_record_alert():
         except (TypeError, ValueError, OverflowError):
             return jsonify({"status": "error", "message": "事件時間格式錯誤"}), 400
 
-    # 1. AlertManager 處理滑動視窗邏輯 (使用伺服器時間防偏)
-    result = alert_manager.record_alert(
+    # 1. 取得該駕駛員獨立的 AlertManager 實例並處理滑動視窗 (多駕駛員隔離)
+    user_am = get_user_alert_manager(user_uuid)
+    result = user_am.record_alert(
         session_id=session_id,
         score=score,
         level=level,
@@ -963,11 +988,20 @@ def api_admin_delete_user(user_id):
 
 @app.route("/api/admin/alerts/reset", methods=["POST"])
 def api_admin_alerts_reset():
-    """管理員手動重置記憶體中的警報滑動視窗狀態（不刪除資料庫紀錄）"""
+    """管理員手動重置記憶體中的警報滑動視窗與通報冷卻狀態（不刪除資料庫紀錄）"""
     guard = _require_admin()
     if guard:
         return guard
 
+    data = request.get_json(silent=True) or {}
+    target_uid = data.get("user_id")
+
+    with _alert_managers_lock:
+        if target_uid and str(target_uid) in _driver_alert_managers:
+            _driver_alert_managers[str(target_uid)].reset()
+        else:
+            for am in _driver_alert_managers.values():
+                am.reset()
     alert_manager.reset()
     state.escalated_alert = False
     state.recent_alert_count = 0

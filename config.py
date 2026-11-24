@@ -1,3 +1,5 @@
+import os
+
 class Config:
 
     # ========================================================================================
@@ -116,9 +118,9 @@ class Config:
     ALERT_COOLDOWN_SECONDS = 5
 
     # ========== 後端警報累計與通報門檻 ==========
-    ALERT_WINDOW_SEC = 300          # 判定多次警告的時間視窗 (秒，預設 300 秒 = 5 分鐘)
-    ALERT_TRIGGER_COUNT = 3         # 觸發後台通報的警告次數門檻 (預設 3 次)
-    ALERT_COOLDOWN_NOTIFY_SEC = 600 # 觸發升級通知後的通報冷卻時間 (秒，預設 600 秒 = 10 分鐘，避免重複轟炸)
+    ALERT_WINDOW_SEC = int(os.environ.get("ALERT_WINDOW_SEC", 300))          # 判定多次警告的時間視窗 (秒，預設 300 秒 = 5 分鐘)
+    ALERT_TRIGGER_COUNT = int(os.environ.get("ALERT_TRIGGER_COUNT", 3))         # 觸發後台通報的警告次數門檻 (預設 3 次)
+    ALERT_COOLDOWN_NOTIFY_SEC = int(os.environ.get("ALERT_COOLDOWN_NOTIFY_SEC", 120)) # 觸發升級通知後的通報冷卻時間 (秒，預設 120 秒 = 2 分鐘，可在 .env 覆蓋)
 
     # ========== 資料庫自動清理設定 ==========
     ALERT_RETENTION_DAYS = 7        # 保留幾天內的警告事件（超過自動刪除）

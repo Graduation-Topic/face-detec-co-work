@@ -192,7 +192,8 @@ class AlertManager:
             return list(self.escalation_history[-limit:])
 
     def reset(self) -> None:
-        """重置當前滑動視窗與升級狀態"""
+        """重置當前滑動視窗、升級狀態與通報冷卻計時"""
         with self._lock:
             self.window_alerts.clear()
             self.is_escalated = False
+            self.last_escalated_time = None
