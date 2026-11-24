@@ -404,6 +404,86 @@
                       </button>
                     </div>
                   </div>
+
+                  <div class="sec-setting" data-setting="api-discord" style="margin-top: 10px;">
+                    <div class="sec-setting-lft">
+                      <span>Discord Webhook</span>
+                      <small class="setting-desc" style="display: block; font-size: 0.75rem; color: var(--color-text-secondary);">個人免公司帳號，支援精美紅色警報卡片與即時推播</small>
+                    </div>
+                    <div
+                      class="sec-setting-rgt"
+                      style="display: flex; align-items: center; gap: 8px"
+                    >
+                      <button
+                        id="discord-api-status-badge"
+                        class="status-badge inactive cursor-pointer"
+                        title="點擊設定 Discord"
+                      >
+                        未連接
+                      </button>
+                      <button
+                        id="btn-open-discord-modal"
+                        class="edit-setting-btn cursor-pointer"
+                        title="編輯 Discord 設定"
+                      >
+                        <svg
+                          width="100%"
+                          height="100%"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M2.5 21.4998L8.04927 19.3655C8.40421 19.229 8.58168 19.1607 8.74772 19.0716C8.8952 18.9924 9.0358 18.901 9.16804 18.7984C9.31692 18.6829 9.45137 18.5484 9.72028 18.2795L21 6.99982C22.1046 5.89525 22.1046 4.10438 21 2.99981C19.8955 1.89525 18.1046 1.89524 17 2.99981L5.72028 14.2795C5.45138 14.5484 5.31692 14.6829 5.20139 14.8318C5.09877 14.964 5.0074 15.1046 4.92823 15.2521C4.83911 15.4181 4.77085 15.5956 4.63433 15.9506L2.5 21.4998ZM2.5 21.4998L4.55812 16.1488C4.7054 15.7659 4.77903 15.5744 4.90534 15.4867C5.01572 15.4101 5.1523 15.3811 5.2843 15.4063C5.43533 15.4351 5.58038 15.5802 5.87048 15.8703L8.12957 18.1294C8.41967 18.4195 8.56472 18.5645 8.59356 18.7155C8.61877 18.8475 8.58979 18.9841 8.51314 19.0945C8.42545 19.2208 8.23399 19.2944 7.85107 19.4417L2.5 21.4998Z"
+                            stroke="#ffffff"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="sec-setting" data-setting="api-telegram" style="margin-top: 10px;">
+                    <div class="sec-setting-lft">
+                      <span>Telegram Bot API</span>
+                      <small class="setting-desc" style="display: block; font-size: 0.75rem; color: var(--color-text-secondary);">個人免審核，支援手機鎖定螢幕即時彈窗與群組廣播</small>
+                    </div>
+                    <div
+                      class="sec-setting-rgt"
+                      style="display: flex; align-items: center; gap: 8px"
+                    >
+                      <button
+                        id="telegram-api-status-badge"
+                        class="status-badge inactive cursor-pointer"
+                        title="點擊設定 Telegram"
+                      >
+                        未連接
+                      </button>
+                      <button
+                        id="btn-open-telegram-modal"
+                        class="edit-setting-btn cursor-pointer"
+                        title="編輯 Telegram 設定"
+                      >
+                        <svg
+                          width="100%"
+                          height="100%"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M2.5 21.4998L8.04927 19.3655C8.40421 19.229 8.58168 19.1607 8.74772 19.0716C8.8952 18.9924 9.0358 18.901 9.16804 18.7984C9.31692 18.6829 9.45137 18.5484 9.72028 18.2795L21 6.99982C22.1046 5.89525 22.1046 4.10438 21 2.99981C19.8955 1.89525 18.1046 1.89524 17 2.99981L5.72028 14.2795C5.45138 14.5484 5.31692 14.6829 5.20139 14.8318C5.09877 14.964 5.0074 15.1046 4.92823 15.2521C4.83911 15.4181 4.77085 15.5956 4.63433 15.9506L2.5 21.4998ZM2.5 21.4998L4.55812 16.1488C4.7054 15.7659 4.77903 15.5744 4.90534 15.4867C5.01572 15.4101 5.1523 15.3811 5.2843 15.4063C5.43533 15.4351 5.58038 15.5802 5.87048 15.8703L8.12957 18.1294C8.41967 18.4195 8.56472 18.5645 8.59356 18.7155C8.61877 18.8475 8.58979 18.9841 8.51314 19.0945C8.42545 19.2208 8.23399 19.2944 7.85107 19.4417L2.5 21.4998Z"
+                            stroke="#ffffff"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <div class="setting-h">
                   <label for="setting-api">通知</label>
@@ -893,6 +973,175 @@
             <button
               type="submit"
               id="btn-submit-line-modal"
+              class="btn-modal-submit cursor-pointer"
+            >
+              儲存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 個人 Discord Webhook 設定彈窗 Modal -->
+    <div id="discord-settings-modal" class="dash-modal hidden">
+      <div class="dash-modal-backdrop" id="discord-modal-backdrop"></div>
+      <div class="dash-modal-box">
+        <div class="dash-modal-header">
+          <h2 class="dash-modal-title">Discord Webhook 設定</h2>
+          <button
+            type="button"
+            id="btn-close-discord-modal"
+            class="btn-close-modal cursor-pointer"
+            aria-label="關閉"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z"
+                fill="#ffffff"
+              />
+            </svg>
+          </button>
+        </div>
+        <form id="discord-settings-form" autocomplete="off">
+          <div class="modal-form-group">
+            <label for="inp-my-discord-webhook">Discord Webhook URL *</label>
+            <input
+              type="url"
+              id="inp-my-discord-webhook"
+              placeholder="https://discord.com/api/webhooks/..."
+            />
+            <small class="hint" id="discord-webhook-hint">
+              在 Discord 伺服器頻道設定中點選「整合」→「建立 Webhook」並複製網址。個人免公司帳號審核！
+            </small>
+          </div>
+
+          <div class="line-test-row">
+            <button
+              type="button"
+              id="btn-test-discord-push"
+              class="dash-btn cursor-pointer"
+            >
+              發送測試卡片
+            </button>
+            <span id="discord-test-feedback"></span>
+          </div>
+
+          <div
+            id="discord-settings-error"
+            class="dash-msg dash-msg-error hidden"
+          ></div>
+          <div
+            id="discord-settings-success"
+            class="dash-msg dash-msg-success hidden"
+          ></div>
+
+          <div class="dash-modal-footer">
+            <button
+              type="button"
+              id="btn-cancel-discord-modal"
+              class="btn-modal-cancel cursor-pointer"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              id="btn-submit-discord-modal"
+              class="btn-modal-submit cursor-pointer"
+            >
+              儲存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 個人 Telegram Bot 設定彈窗 Modal -->
+    <div id="telegram-settings-modal" class="dash-modal hidden">
+      <div class="dash-modal-backdrop" id="telegram-modal-backdrop"></div>
+      <div class="dash-modal-box">
+        <div class="dash-modal-header">
+          <h2 class="dash-modal-title">Telegram Bot 設定</h2>
+          <button
+            type="button"
+            id="btn-close-telegram-modal"
+            class="btn-close-modal cursor-pointer"
+            aria-label="關閉"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m20.28 4.78-1.06-1.06L12 10.94 4.78 3.72 3.72 4.78 10.94 12l-7.22 7.22 1.06 1.06L12 13.06l7.22 7.22 1.06-1.06L13.06 12l7.22-7.22Z"
+                fill="#ffffff"
+              />
+            </svg>
+          </button>
+        </div>
+        <form id="telegram-settings-form" autocomplete="off">
+          <div class="modal-form-group">
+            <label for="inp-my-telegram-chat-id">Telegram Chat ID *</label>
+            <input
+              type="text"
+              id="inp-my-telegram-chat-id"
+              placeholder="例如 123456789"
+            />
+            <small class="hint" id="telegram-chat-hint">
+              可在 Telegram 搜尋 @userinfobot 獲取您的個人 Chat ID。
+            </small>
+          </div>
+          <div class="modal-form-group">
+            <label for="inp-my-telegram-token">專屬 Bot Token (選填)</label>
+            <input
+              type="password"
+              id="inp-my-telegram-token"
+              placeholder="留空則使用系統預設 Bot"
+            />
+            <small class="hint">
+              向 @BotFather 輸入 /newbot 即可取得 Token。若系統已配置則可留空。
+            </small>
+          </div>
+
+          <div class="line-test-row">
+            <button
+              type="button"
+              id="btn-test-telegram-push"
+              class="dash-btn cursor-pointer"
+            >
+              發送測試訊息
+            </button>
+            <span id="telegram-test-feedback"></span>
+          </div>
+
+          <div
+            id="telegram-settings-error"
+            class="dash-msg dash-msg-error hidden"
+          ></div>
+          <div
+            id="telegram-settings-success"
+            class="dash-msg dash-msg-success hidden"
+          ></div>
+
+          <div class="dash-modal-footer">
+            <button
+              type="button"
+              id="btn-cancel-telegram-modal"
+              class="btn-modal-cancel cursor-pointer"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              id="btn-submit-telegram-modal"
               class="btn-modal-submit cursor-pointer"
             >
               儲存

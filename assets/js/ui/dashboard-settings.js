@@ -51,6 +51,42 @@
       }
     }
 
+    // 2.1 Discord Webhook 連線狀態
+    const dcBadge = $("discord-api-status-badge");
+    if (dcBadge) {
+      if (st.has_discord) {
+        dcBadge.textContent = "已連線 (自訂)";
+        dcBadge.className = "status-badge active cursor-pointer";
+        dcBadge.title = `已設定個人專屬 Webhook`;
+      } else if (st.has_system_discord) {
+        dcBadge.textContent = "已連線 (系統)";
+        dcBadge.className = "status-badge active cursor-pointer";
+        dcBadge.title = `使用系統預設 Webhook: ${st.system_discord_masked || ""}`;
+      } else {
+        dcBadge.textContent = "未連接";
+        dcBadge.className = "status-badge inactive cursor-pointer";
+        dcBadge.title = "點擊開啟 Discord 設定";
+      }
+    }
+
+    // 2.2 Telegram Bot 連線狀態
+    const tgBadge = $("telegram-api-status-badge");
+    if (tgBadge) {
+      if (st.has_telegram) {
+        tgBadge.textContent = "已連線 (自訂)";
+        tgBadge.className = "status-badge active cursor-pointer";
+        tgBadge.title = `Chat ID: ${st.telegram_chat_id}`;
+      } else if (st.has_system_telegram) {
+        tgBadge.textContent = "已連線 (系統)";
+        tgBadge.className = "status-badge active cursor-pointer";
+        tgBadge.title = `使用系統預設 Bot (${st.system_telegram_chat_masked || ""})`;
+      } else {
+        tgBadge.textContent = "未連接";
+        tgBadge.className = "status-badge inactive cursor-pointer";
+        tgBadge.title = "點擊開啟 Telegram 設定";
+      }
+    }
+
     // 3. 網頁端 LINE 通知開關
     const lineToggle = $("line-notify-toggle");
     if (lineToggle) {
@@ -338,6 +374,285 @@
         if (lineErrBox) {
           lineErrBox.textContent = err.message;
           lineErrBox.classList.remove("hidden");
+        }
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  }
+
+  // ==========================================
+  // Discord Webhook Modal 邏輯
+  // ==========================================
+  const dcModal = $("discord-settings-modal");
+  const openDcBtn = $("btn-open-discord-modal");
+  const dcBadgeBtn = $("discord-api-status-badge");
+  const closeDcBtn = $("btn-close-discord-modal");
+  const cancelDcBtn = $("btn-cancel-discord-modal");
+  const dcBackdrop = $("discord-modal-backdrop");
+  const dcForm = $("discord-settings-form");
+  const dcErrBox = $("discord-settings-error");
+  const dcSuccessBox = $("discord-settings-success");
+  const testDcBtn = $("btn-test-discord-push");
+  const testDcFeedback = $("discord-test-feedback");
+
+  function openDiscordModal() {
+    if (!dcModal) return;
+    if (dcErrBox) {
+      dcErrBox.classList.add("hidden");
+      dcErrBox.textContent = "";
+    }
+    if (dcSuccessBox) {
+      dcSuccessBox.classList.add("hidden");
+      dcSuccessBox.textContent = "";
+    }
+    if (testDcFeedback) {
+      testDcFeedback.textContent = "";
+    }
+
+    const st = currentSettings || {};
+    $("inp-my-discord-webhook").value = st.discord_webhook || "";
+
+    const dcHint = $("discord-webhook-hint");
+    if (dcHint) {
+      if (st.has_discord) {
+        dcHint.textContent = "目前已設定個人專屬 Webhook，可直接覆蓋更新或留空清空。";
+      } else if (st.has_system_discord) {
+        dcHint.textContent = `目前使用系統全域 Webhook (${st.system_discord_masked})。您可填入自訂頻道 Webhook 覆蓋。`;
+      } else {
+        dcHint.textContent = "在 Discord 伺服器頻道設定中點選「整合」→「建立 Webhook」並複製網址。個人免公司帳號！";
+      }
+    }
+
+    dcModal.classList.remove("hidden");
+  }
+
+  function closeDiscordModal() {
+    if (!dcModal) return;
+    dcModal.classList.add("hidden");
+  }
+
+  if (openDcBtn) openDcBtn.addEventListener("click", openDiscordModal);
+  if (dcBadgeBtn) dcBadgeBtn.addEventListener("click", openDiscordModal);
+  if (closeDcBtn) closeDcBtn.addEventListener("click", closeDiscordModal);
+  if (cancelDcBtn) cancelDcBtn.addEventListener("click", closeDiscordModal);
+  if (dcBackdrop) dcBackdrop.addEventListener("click", closeDiscordModal);
+
+  if (testDcBtn) {
+    testDcBtn.addEventListener("click", async () => {
+      const webhook = $("inp-my-discord-webhook").value.trim();
+      const st = currentSettings || {};
+
+      if (!webhook && !st.has_system_discord) {
+        if (testDcFeedback) {
+          testDcFeedback.style.color = "var(--color-danger)";
+          testDcFeedback.textContent = "請先填寫 Discord Webhook 網址";
+        }
+        return;
+      }
+
+      if (testDcFeedback) {
+        testDcFeedback.style.color = "var(--color-text-secondary)";
+        testDcFeedback.textContent = "發送 Discord 測試卡片中…";
+      }
+
+      try {
+        const res = await fetch("/api/test/discord", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ discord_webhook: webhook || undefined }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          testDcFeedback.style.color = "var(--color-success)";
+          testDcFeedback.textContent = "✓ 測試卡片已送出！請查看 Discord 頻道";
+        } else {
+          testDcFeedback.style.color = "var(--color-danger)";
+          testDcFeedback.textContent = "發送失敗: " + (data.message || "錯誤");
+        }
+      } catch (err) {
+        if (testDcFeedback) {
+          testDcFeedback.style.color = "var(--color-danger)";
+          testDcFeedback.textContent = "連線異常: " + err.message;
+        }
+      }
+    });
+  }
+
+  if (dcForm) {
+    dcForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const webhook = $("inp-my-discord-webhook").value.trim();
+      const submitBtn = $("btn-submit-discord-modal");
+      if (submitBtn) submitBtn.disabled = true;
+
+      try {
+        const res = await fetch("/api/user/line-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ discord_webhook: webhook }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "儲存失敗");
+
+        if (currentSettings) {
+          currentSettings.discord_webhook = webhook;
+          currentSettings.has_discord = Boolean(webhook);
+          renderSettingsView(currentSettings);
+        }
+
+        if (dcSuccessBox) {
+          dcSuccessBox.textContent = "Discord 設定已成功儲存";
+          dcSuccessBox.classList.remove("hidden");
+        }
+
+        setTimeout(closeDiscordModal, 800);
+      } catch (err) {
+        if (dcErrBox) {
+          dcErrBox.textContent = err.message;
+          dcErrBox.classList.remove("hidden");
+        }
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  }
+
+  // ==========================================
+  // Telegram Bot Modal 邏輯
+  // ==========================================
+  const tgModal = $("telegram-settings-modal");
+  const openTgBtn = $("btn-open-telegram-modal");
+  const tgBadgeBtn = $("telegram-api-status-badge");
+  const closeTgBtn = $("btn-close-telegram-modal");
+  const cancelTgBtn = $("btn-cancel-telegram-modal");
+  const tgBackdrop = $("telegram-modal-backdrop");
+  const tgForm = $("telegram-settings-form");
+  const tgErrBox = $("telegram-settings-error");
+  const tgSuccessBox = $("telegram-settings-success");
+  const testTgBtn = $("btn-test-telegram-push");
+  const testTgFeedback = $("telegram-test-feedback");
+
+  function openTelegramModal() {
+    if (!tgModal) return;
+    if (tgErrBox) {
+      tgErrBox.classList.add("hidden");
+      tgErrBox.textContent = "";
+    }
+    if (tgSuccessBox) {
+      tgSuccessBox.classList.add("hidden");
+      tgSuccessBox.textContent = "";
+    }
+    if (testTgFeedback) {
+      testTgFeedback.textContent = "";
+    }
+
+    const st = currentSettings || {};
+    $("inp-my-telegram-chat-id").value = st.telegram_chat_id || "";
+    $("inp-my-telegram-token").value = "";
+
+    const tgHint = $("telegram-chat-hint");
+    if (tgHint) {
+      if (st.has_telegram) {
+        tgHint.textContent = `目前已綁定 Chat ID: ${st.telegram_chat_id}`;
+      } else if (st.has_system_telegram) {
+        tgHint.textContent = `系統已配置預設 Bot，您只需填入個人的 Telegram Chat ID 即可接收通知。`;
+      } else {
+        tgHint.textContent = "在 Telegram 搜尋 @userinfobot 即可快速獲取您的 Chat ID。";
+      }
+    }
+
+    tgModal.classList.remove("hidden");
+  }
+
+  function closeTelegramModal() {
+    if (!tgModal) return;
+    tgModal.classList.add("hidden");
+  }
+
+  if (openTgBtn) openTgBtn.addEventListener("click", openTelegramModal);
+  if (tgBadgeBtn) tgBadgeBtn.addEventListener("click", openTelegramModal);
+  if (closeTgBtn) closeTgBtn.addEventListener("click", closeTelegramModal);
+  if (cancelTgBtn) cancelTgBtn.addEventListener("click", closeTelegramModal);
+  if (tgBackdrop) tgBackdrop.addEventListener("click", closeTelegramModal);
+
+  if (testTgBtn) {
+    testTgBtn.addEventListener("click", async () => {
+      const chatId = $("inp-my-telegram-chat-id").value.trim();
+      const botToken = $("inp-my-telegram-token").value.trim();
+      const st = currentSettings || {};
+
+      if (!chatId && !st.has_system_telegram) {
+        if (testTgFeedback) {
+          testTgFeedback.style.color = "var(--color-danger)";
+          testTgFeedback.textContent = "請先填寫 Telegram Chat ID";
+        }
+        return;
+      }
+
+      if (testTgFeedback) {
+        testTgFeedback.style.color = "var(--color-text-secondary)";
+        testTgFeedback.textContent = "發送 Telegram 測試訊息中…";
+      }
+
+      try {
+        const res = await fetch("/api/test/telegram", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            telegram_chat_id: chatId || undefined,
+            telegram_bot_token: botToken || undefined,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          testTgFeedback.style.color = "var(--color-success)";
+          testTgFeedback.textContent = "✓ 測試訊息已成功送達！請查看 Telegram 對話";
+        } else {
+          testTgFeedback.style.color = "var(--color-danger)";
+          testTgFeedback.textContent = "發送失敗: " + (data.message || "錯誤");
+        }
+      } catch (err) {
+        if (testTgFeedback) {
+          testTgFeedback.style.color = "var(--color-danger)";
+          testTgFeedback.textContent = "連線異常: " + err.message;
+        }
+      }
+    });
+  }
+
+  if (tgForm) {
+    tgForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const chatId = $("inp-my-telegram-chat-id").value.trim();
+      const submitBtn = $("btn-submit-telegram-modal");
+      if (submitBtn) submitBtn.disabled = true;
+
+      try {
+        const res = await fetch("/api/user/line-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ telegram_chat_id: chatId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "儲存失敗");
+
+        if (currentSettings) {
+          currentSettings.telegram_chat_id = chatId;
+          currentSettings.has_telegram = Boolean(chatId);
+          renderSettingsView(currentSettings);
+        }
+
+        if (tgSuccessBox) {
+          tgSuccessBox.textContent = "Telegram 設定已成功儲存";
+          tgSuccessBox.classList.remove("hidden");
+        }
+
+        setTimeout(closeTelegramModal, 800);
+      } catch (err) {
+        if (tgErrBox) {
+          tgErrBox.textContent = err.message;
+          tgErrBox.classList.remove("hidden");
         }
       } finally {
         if (submitBtn) submitBtn.disabled = false;

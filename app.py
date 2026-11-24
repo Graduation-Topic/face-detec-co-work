@@ -20,6 +20,16 @@ from line_notifier import (
     get_default_line_token,
     send_line_push_message,
 )
+from discord_notifier import (
+    get_default_discord_webhook,
+    send_discord_test_message,
+)
+from telegram_notifier import (
+    get_default_telegram_token,
+    get_default_telegram_chat_id,
+    send_telegram_test_message,
+)
+from notifier import dispatch_fatigue_escalation_alert
 from database import (
     create_user,
     delete_user,
@@ -236,6 +246,10 @@ def api_get_line_settings():
     if not user:
         return jsonify({"status": "error", "message": "使用者不存在"}), 404
 
+    sys_dc = get_default_discord_webhook()
+    sys_tg_token = get_default_telegram_token()
+    sys_tg_chat = get_default_telegram_chat_id()
+
     return jsonify({
         "status": "success",
         "settings": {
@@ -249,6 +263,14 @@ def api_get_line_settings():
             "has_system_token": bool(get_default_line_token()),
             "line_notify_enabled": user.line_notify_enabled,
             "line_notify_all": user.line_notify_all,
+            "discord_webhook": user.discord_webhook or "",
+            "has_discord": bool(user.discord_webhook and user.discord_webhook.strip()),
+            "has_system_discord": bool(sys_dc),
+            "system_discord_masked": f"{sys_dc[:35]}...{sys_dc[-6:]}" if len(sys_dc) > 42 else ("已配置" if sys_dc else ""),
+            "telegram_chat_id": user.telegram_chat_id or "",
+            "has_telegram": bool(user.telegram_chat_id and user.telegram_chat_id.strip()),
+            "has_system_telegram": bool(sys_tg_token and sys_tg_chat),
+            "system_telegram_chat_masked": f"{sys_tg_chat[:4]}***" if sys_tg_chat else "",
         }
     })
 
@@ -295,6 +317,8 @@ def api_save_line_settings():
     line_token = data.get("line_token")
     line_notify_enabled = data.get("line_notify_enabled")
     line_notify_all = data.get("line_notify_all")
+    discord_webhook = data.get("discord_webhook")
+    telegram_chat_id = data.get("telegram_chat_id")
 
     kwargs = {}
     if line_user_id is not None:
@@ -305,6 +329,10 @@ def api_save_line_settings():
         kwargs["line_notify_enabled"] = bool(line_notify_enabled)
     if line_notify_all is not None and user.role == "developer":
         kwargs["line_notify_all"] = bool(line_notify_all)
+    if discord_webhook is not None:
+        kwargs["discord_webhook"] = str(discord_webhook).strip() or None
+    if telegram_chat_id is not None:
+        kwargs["telegram_chat_id"] = str(telegram_chat_id).strip() or None
 
     try:
         updated = update_user(user_id, **kwargs)
@@ -312,18 +340,78 @@ def api_save_line_settings():
             return jsonify({"status": "error", "message": "更新失敗，使用者不存在"}), 404
         return jsonify({
             "status": "success",
-            "message": "LINE 設定已成功儲存",
+            "message": "通知設定已成功儲存",
             "settings": {
                 "line_user_id": updated.line_user_id or "",
                 "has_line": bool(updated.line_user_id and updated.line_user_id.strip()),
                 "has_custom_token": bool(updated.line_token and updated.line_token.strip()),
                 "line_notify_enabled": updated.line_notify_enabled,
                 "line_notify_all": updated.line_notify_all,
+                "discord_webhook": updated.discord_webhook or "",
+                "has_discord": bool(updated.discord_webhook and updated.discord_webhook.strip()),
+                "telegram_chat_id": updated.telegram_chat_id or "",
+                "has_telegram": bool(updated.telegram_chat_id and updated.telegram_chat_id.strip()),
             }
         })
     except Exception as e:
         app.logger.error(f"[USER] update line settings error: {e}")
         return jsonify({"status": "error", "message": f"儲存失敗: {e}"}), 500
+
+
+@app.route("/api/test/discord", methods=["POST"])
+def api_test_discord():
+    """發送 Discord 測試推播訊息"""
+    identity = _get_identity()
+    user_id = identity.get("user_id") if identity else None
+    if not user_id:
+        return jsonify({"status": "error", "message": "請先登入"}), 401
+
+    user = get_user_by_id(user_id)
+    if not user:
+        return jsonify({"status": "error", "message": "使用者不存在"}), 404
+
+    data = request.get_json(silent=True) or {}
+    webhook_url = str(data.get("discord_webhook") or user.discord_webhook or "").strip() or None
+
+    res = send_discord_test_message(
+        webhook_url=webhook_url,
+        user_name=user.display_name or user.username,
+        role=user.role,
+    )
+
+    if res["success"]:
+        return jsonify({"status": "success", "message": "Discord 測試推播已成功發送！請查看您的頻道。"})
+    else:
+        return jsonify({"status": "error", "message": res["message"]}), 400
+
+
+@app.route("/api/test/telegram", methods=["POST"])
+def api_test_telegram():
+    """發送 Telegram 測試推播訊息"""
+    identity = _get_identity()
+    user_id = identity.get("user_id") if identity else None
+    if not user_id:
+        return jsonify({"status": "error", "message": "請先登入"}), 401
+
+    user = get_user_by_id(user_id)
+    if not user:
+        return jsonify({"status": "error", "message": "使用者不存在"}), 404
+
+    data = request.get_json(silent=True) or {}
+    chat_id = str(data.get("telegram_chat_id") or user.telegram_chat_id or "").strip() or None
+    bot_token = str(data.get("telegram_bot_token") or "").strip() or None
+
+    res = send_telegram_test_message(
+        chat_id=chat_id,
+        bot_token=bot_token,
+        user_name=user.display_name or user.username,
+        role=user.role,
+    )
+
+    if res["success"]:
+        return jsonify({"status": "success", "message": "Telegram 測試訊息已成功送達！請查看 Telegram 對話。"})
+    else:
+        return jsonify({"status": "error", "message": res["message"]}), 400
 
 
 @app.route("/api/user/line-settings/test", methods=["POST"])
@@ -526,62 +614,29 @@ def api_record_alert():
 
         insert_event(event_payload)
 
-        # 4. 疲勞升級時，發送 LINE Messaging API 推播通知
+        # 4. 疲勞升級時，發送跨通訊管道 (LINE / Discord / Telegram) 推播通知
         if result.get("is_new_escalation"):
             try:
                 driver = get_user_by_id(user_uuid)
                 driver_name = (driver.display_name or driver.username) if driver else f"駕駛員 #{user_uuid}"
                 driver_username = driver.username if driver else str(user_uuid)
-                alert_msg = format_fatigue_alert_message(
+                manager = get_user_by_id(driver.manager_id) if (driver and driver.manager_id) else None
+                admins = list_users(role="developer") + list_users(role="admin")
+
+                dispatch_res = dispatch_fatigue_escalation_alert(
                     driver_name=driver_name,
                     driver_username=driver_username,
                     reason=reason,
                     score=score,
                     window_count=result["window_count"],
                     occurred_at=client_timestamp or datetime.now(timezone.utc),
+                    driver=driver,
+                    manager=manager,
+                    admins=admins,
                 )
-
-                notified_uids = set()
-
-                # 4.1 通報直屬主管 (車隊管理員)
-                if driver and driver.manager_id:
-                    try:
-                        manager = get_user_by_id(driver.manager_id)
-                        if (
-                            manager
-                            and manager.is_active
-                            and manager.line_notify_enabled
-                            and manager.line_user_id
-                            and manager.line_user_id not in notified_uids
-                        ):
-                            send_line_push_message(
-                                to_user_id=manager.line_user_id,
-                                message_text=alert_msg,
-                                channel_access_token=manager.line_token,
-                            )
-                            notified_uids.add(manager.line_user_id)
-                    except Exception as mgr_err:
-                        app.logger.warning(f"[LINE] 通報主管失敗: {mgr_err}")
-
-                try:
-                    admins = list_users(role="developer") + list_users(role="admin")
-                    for sa in admins:
-                        if not sa.is_active or not sa.line_notify_enabled or not sa.line_user_id:
-                            continue
-                        if sa.line_user_id in notified_uids:
-                            continue
-                        if sa.line_notify_all or not (driver and driver.manager_id):
-                            send_line_push_message(
-                                to_user_id=sa.line_user_id,
-                                message_text=alert_msg,
-                                channel_access_token=sa.line_token,
-                            )
-                            notified_uids.add(sa.line_user_id)
-                except Exception as sa_err:
-                    app.logger.warning(f"[LINE] 通報總管理員失敗: {sa_err}")
-
-            except Exception as line_err:
-                app.logger.error(f"[LINE] 疲勞升級推播異常: {line_err}")
+                app.logger.info(f"[NOTIFIER] 疲勞升級多管道推播結果: {dispatch_res}")
+            except Exception as notify_err:
+                app.logger.error(f"[NOTIFIER] 疲勞升級推播異常: {notify_err}")
 
         # 5. 順便清理過期資料（不影響回應時間，偶發失敗可忽略）
         try:
@@ -853,6 +908,14 @@ def api_admin_update_user(user_id):
 
     if "line_notify_enabled" in data:
         update_fields["line_notify_enabled"] = bool(data["line_notify_enabled"])
+
+    if "discord_webhook" in data:
+        raw_dc = data["discord_webhook"]
+        update_fields["discord_webhook"] = str(raw_dc).strip() if (raw_dc and str(raw_dc).strip()) else None
+
+    if "telegram_chat_id" in data:
+        raw_tg = data["telegram_chat_id"]
+        update_fields["telegram_chat_id"] = str(raw_tg).strip() if (raw_tg and str(raw_tg).strip()) else None
 
     try:
         updated = update_user(target.id, **update_fields)

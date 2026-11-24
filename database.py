@@ -83,6 +83,8 @@ class User:
     line_user_id: Optional[str] = None
     line_notify_enabled: bool = True
     line_notify_all: bool = True
+    discord_webhook: Optional[str] = None
+    telegram_chat_id: Optional[str] = None
     created_at: Optional[Any] = None
     updated_at: Optional[Any] = None
 
@@ -100,6 +102,8 @@ class User:
             line_user_id=row.get("line_user_id"),
             line_notify_enabled=bool(row.get("line_notify_enabled", True)),
             line_notify_all=bool(row.get("line_notify_all", True)),
+            discord_webhook=row.get("discord_webhook"),
+            telegram_chat_id=row.get("telegram_chat_id"),
             created_at=row.get("created_at"),
             updated_at=row.get("updated_at"),
         )
@@ -137,6 +141,10 @@ class User:
             "has_line": bool(self.line_user_id and self.line_user_id.strip()),
             "line_notify_enabled": self.line_notify_enabled,
             "line_notify_all": self.line_notify_all,
+            "discord_webhook": self.discord_webhook,
+            "telegram_chat_id": self.telegram_chat_id,
+            "has_discord": bool(self.discord_webhook and self.discord_webhook.strip()),
+            "has_telegram": bool(self.telegram_chat_id and self.telegram_chat_id.strip()),
             "created_at": str(self.created_at) if self.created_at else None,
             "updated_at": str(self.updated_at) if self.updated_at else None,
         }
@@ -179,7 +187,33 @@ def init_db() -> None:
 
 # ========== 使用者操作 (User Operations) ==========
 
+_user_notification_columns_ensured = False
+
+def _ensure_user_notification_columns():
+    """冪等檢查並自動建立 discord_webhook 與 telegram_chat_id 欄位"""
+    global _user_notification_columns_ensured
+    if _user_notification_columns_ensured or not is_direct_db_configured():
+        return
+    try:
+        with _connect_dict() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    ALTER TABLE public.users 
+                    ADD COLUMN IF NOT EXISTS discord_webhook text,
+                    ADD COLUMN IF NOT EXISTS telegram_chat_id text;
+                """)
+            connection.commit()
+        _user_notification_columns_ensured = True
+    except Exception:
+        pass
+
 USER_COLUMNS_SQL = sql.SQL("""
+    uuid, "userID", "userName", hash_password, role, is_active, manager_id,
+    line_token, line_user_id, line_notify_enabled, line_notify_all,
+    discord_webhook, telegram_chat_id, created_at, updated_at
+""")
+
+USER_COLUMNS_SQL_FALLBACK = sql.SQL("""
     uuid, "userID", "userName", hash_password, role, is_active, manager_id,
     line_token, line_user_id, line_notify_enabled, line_notify_all, created_at, updated_at
 """)
@@ -358,8 +392,11 @@ def update_user(
     line_user_id: Optional[str] = None,
     line_notify_enabled: Optional[bool] = None,
     line_notify_all: Optional[bool] = None,
+    discord_webhook: Optional[str] = None,
+    telegram_chat_id: Optional[str] = None,
 ) -> Optional[User]:
     """更新使用者資料（總管理員修改全部帳號資料 / 使用者修改個人設定）"""
+    _ensure_user_notification_columns()
     uid_str = str(user_id).strip()
     if is_direct_db_configured():
         set_clauses: List[sql.Composable] = [sql.SQL("updated_at = NOW()")]
@@ -395,6 +432,14 @@ def update_user(
         if line_notify_all is not None:
             set_clauses.append(sql.SQL("line_notify_all = %s"))
             params.append(bool(line_notify_all))
+        if discord_webhook is not None:
+            dc_val = str(discord_webhook).strip() if (discord_webhook and str(discord_webhook).strip()) else None
+            set_clauses.append(sql.SQL("discord_webhook = %s"))
+            params.append(dc_val)
+        if telegram_chat_id is not None:
+            tg_val = str(telegram_chat_id).strip() if (telegram_chat_id and str(telegram_chat_id).strip()) else None
+            set_clauses.append(sql.SQL("telegram_chat_id = %s"))
+            params.append(tg_val)
 
         params.append(uid_str)
         query = sql.SQL("""
@@ -431,6 +476,10 @@ def update_user(
             patch["line_notify_enabled"] = bool(line_notify_enabled)
         if line_notify_all is not None:
             patch["line_notify_all"] = bool(line_notify_all)
+        if discord_webhook is not None:
+            patch["discord_webhook"] = str(discord_webhook).strip() if (discord_webhook and str(discord_webhook).strip()) else None
+        if telegram_chat_id is not None:
+            patch["telegram_chat_id"] = str(telegram_chat_id).strip() if (telegram_chat_id and str(telegram_chat_id).strip()) else None
         res = supabase.table("users").update(patch).eq("uuid", uid_str).execute()
         rows = _response_rows(res)
         return User.from_row(rows[0]) if rows else None
