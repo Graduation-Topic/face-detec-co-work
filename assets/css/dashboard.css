@@ -1,6 +1,5 @@
 .dash-nav-inner {
   display: flex;
-  max-width: 1400px;
   width: 100%;
   height: 100%;
   gap: 48px;
@@ -9,12 +8,11 @@
 
 .dash-content {
   display: flex;
-  max-width: 1400px;
   width: 100%;
   height: calc(100vh - var(--nav-height));
   min-height: 0;
   flex-direction: row;
-  gap: 24px;
+  gap: 72px;
   overflow: hidden;
 }
 
@@ -83,8 +81,9 @@
   height: 100%;
   flex-direction: column;
   overflow-y: auto;
-  padding: 24px 12px 0 12px;
+  padding: 24px 100px 0 72px;
   scrollbar-color: #666 var(--color-bg);
+  scrollbar-width: thin;
 }
 
 .dash-rgt::-webkit-scrollbar-track {
@@ -181,7 +180,6 @@ body.dashboard-loading #alert-tbody {
   overflow: hidden;
 }
 
-/* Overview */
 .stat-card {
   display: flex;
   flex-direction: column;
@@ -229,6 +227,7 @@ body.dashboard-loading #alert-tbody {
 
 .action-bar {
   display: flex;
+  width: 100%;
   gap: 8px;
   flex-wrap: wrap;
 }
@@ -253,17 +252,13 @@ body.dashboard-loading #alert-tbody {
 }
 
 .dash-btn:active {
-  transform: scale(0.985);
+  transform: scale(0.99);
 }
 
 .dash-btn-warning {
   background-color: rgba(255, 184, 77, 0.12);
   color: var(--color-warning);
   border-color: rgba(255, 184, 77, 0.3);
-}
-
-.dash-btn-warning:hover {
-  background-color: rgba(255, 184, 77, 0.2);
 }
 
 .dash-msg {
@@ -636,28 +631,16 @@ body.dashboard-loading #alert-tbody {
   overflow-x: auto;
 }
 
-/* Role Badges */
 .role-badge {
-  display: flex;
-  width: auto;
-  height: auto;
+  outline: none;
+  display: inline-flex;
   align-items: center;
-  font-family: var(--font-inter);
-  font-size: 13px;
+  gap: 4px;
+  font-size: 11px;
+  border-radius: 999px;
   line-height: 1;
+  background-color: transparent;
   user-select: none;
-}
-
-.role-badge-developer {
-  color: #ffd700;
-}
-
-.role-badge-admin {
-  color: #3898ec;
-}
-
-.role-badge-driver {
-  color: var(--color-success);
 }
 
 .btn-user-edit {
@@ -705,9 +688,10 @@ body.dashboard-loading #alert-tbody {
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  padding: 2px 7px;
+  padding: 4px 8px;
   border-radius: 999px;
   font-weight: 500;
+  line-height: 1;
 }
 .line-badge.bound {
   background-color: rgba(52, 199, 89, 0.12);
@@ -1080,25 +1064,27 @@ body.dashboard-loading #alert-tbody {
   aspect-ratio: 1/1;
 }
 
-/* 連接/未連接圖示 */
 .status-badge {
-  display: flex;
-  width: auto;
-  justify-content: center;
+  outline: none;
+  display: inline-flex;
   align-items: center;
-  font-family: var(--font-inter);
-  background-color: transparent;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 11px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
   line-height: 1;
-  white-space: nowrap;
+  background-color: transparent;
   user-select: none;
 }
 
 .status-badge.inactive {
+  border-color: var(--color-danger);
   color: var(--color-danger);
 }
 
 .status-badge.active {
+  border-color: var(--color-success);
   color: var(--color-success);
 }
 
@@ -1175,6 +1161,14 @@ body.dashboard-loading #alert-tbody {
 }
 
 @media (max-width: 1300px) {
+  .dash-content {
+    gap: 16px;
+  }
+
+  .dash-rgt {
+    padding: 16px 24px;
+  }
+
   .table-wrapper {
     overflow-x: auto;
   }

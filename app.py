@@ -3,16 +3,13 @@ import os
 import time
 from datetime import datetime, timezone
 
-# ========== 環境偵測：本地 vs Render ==========
-# Render 會自動注入 RENDER=true 環境變數；本地開發則不會有這個變數。
 IS_RENDER = os.environ.get("RENDER") == "true"
 
 if not IS_RENDER:
-    # 本地開發環境：從 .env 檔案載入環境變數（.env 已加入 .gitignore，不會上傳到 GitHub）
     from dotenv import load_dotenv
     load_dotenv()
 
-from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, url_for
+from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -70,7 +67,7 @@ except Exception as _db_init_err:
 def _require_admin():
     identity = _get_identity()
     role = identity.get("role") if identity else None
-    if role not in ("admin", "developer", "super_admin"):
+    if role not in ("admin", "developer"):
         return jsonify({"status": "error", "message": "請先以管理員身份登入"}), 401
     return None
 
@@ -306,11 +303,13 @@ def api_save_line_settings():
         kwargs["line_token"] = str(line_token).strip() or None
     if line_notify_enabled is not None:
         kwargs["line_notify_enabled"] = bool(line_notify_enabled)
-    if line_notify_all is not None and user.role in ("developer", "super_admin"):
+    if line_notify_all is not None and user.role == "developer":
         kwargs["line_notify_all"] = bool(line_notify_all)
 
     try:
         updated = update_user(user_id, **kwargs)
+        if updated is None:
+            return jsonify({"status": "error", "message": "更新失敗，使用者不存在"}), 404
         return jsonify({
             "status": "success",
             "message": "LINE 設定已成功儲存",
@@ -564,10 +563,9 @@ def api_record_alert():
                     except Exception as mgr_err:
                         app.logger.warning(f"[LINE] 通報主管失敗: {mgr_err}")
 
-                # 4.2 通報總管理員 / 開發者 (若 line_notify_all 開啟，或該駕駛員未指派直屬主管)
                 try:
-                    super_admins = list_users(role="developer") + list_users(role="super_admin")
-                    for sa in super_admins:
+                    admins = list_users(role="developer") + list_users(role="admin")
+                    for sa in admins:
                         if not sa.is_active or not sa.line_notify_enabled or not sa.line_user_id:
                             continue
                         if sa.line_user_id in notified_uids:
@@ -600,7 +598,6 @@ def api_record_alert():
 
 @app.route("/api/admin/alerts", methods=["GET"])
 def api_admin_alerts():
-    """提供後台管理者查詢即時警報與通報紀錄（需要 admin 登入）"""
     guard = _require_admin()
     if guard:
         return guard
@@ -787,7 +784,6 @@ def api_admin_create_user():
 
 @app.route("/api/admin/users/<user_id>", methods=["PUT"])
 def api_admin_update_user(user_id):
-    """修改使用者資料 (開發者/總管理員可修改全部帳號資料；一般管理員僅可修改自己管轄名下的司機)"""
     guard = _require_admin()
     if guard:
         return guard
@@ -795,15 +791,14 @@ def api_admin_update_user(user_id):
     identity = _get_identity()
     current_role = identity.get("role") if identity else None
     current_user_id = identity.get("user_id") if identity else None
-    is_super = current_role in ("developer", "super_admin")
-
+    is_super = current_role == "developer"
+    
     target = get_user_by_id(user_id)
     if not target:
         return jsonify({"status": "error", "message": "找不到該使用者"}), 404
 
     data = request.get_json(silent=True) or {}
 
-    # 權限檢查：一般管理員只能修改自己管轄名下的 driver
     if not is_super:
         if target.role != "driver" or target.manager_id != current_user_id:
             return jsonify({"status": "error", "message": "您無權修改此員工資料"}), 403
@@ -831,12 +826,11 @@ def api_admin_update_user(user_id):
             return jsonify({"status": "error", "message": "無法停用自己目前的帳號"}), 400
         update_fields["is_active"] = is_active
 
-    # 4. 僅開發者/總管理員可修改的欄位 (身分角色、所屬主管、全域推播開關)
     if is_super:
         if "role" in data:
             requested_role = str(data["role"]).strip()
-            if requested_role in ("developer", "super_admin", "admin", "driver"):
-                if target.id == current_user_id and requested_role not in ("developer", "super_admin"):
+            if target.id == current_user_id and requested_role != "developer":
+                if target.id == current_user_id and requested_role not in ("developer", "admin"):
                     return jsonify({"status": "error", "message": "開發者無法變更自己的身分角色"}), 400
                 update_fields["role"] = requested_role
 
@@ -848,7 +842,6 @@ def api_admin_update_user(user_id):
         if "line_notify_all" in data:
             update_fields["line_notify_all"] = bool(data["line_notify_all"])
 
-    # 5. LINE User ID, Token, 推播開關
     if "line_user_id" in data:
         raw_luid = data["line_user_id"]
         update_fields["line_user_id"] = str(raw_luid).strip() if (raw_luid and str(raw_luid).strip()) else None

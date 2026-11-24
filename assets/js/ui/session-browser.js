@@ -20,7 +20,11 @@
     const url = typeof input === "string" ? input : input.url;
     const token = window.faceDetectionAuth.getToken();
     const headers = new Headers(
-      init && init.headers ? init.headers : input instanceof Request ? input.headers : undefined
+      init && init.headers
+        ? init.headers
+        : input instanceof Request
+          ? input.headers
+          : undefined,
     );
 
     const requestUrl = new URL(url, window.location.origin);
@@ -41,9 +45,11 @@
   if (window.location.pathname.startsWith("/dashboard")) {
     window.addEventListener("DOMContentLoaded", async () => {
       try {
-        const response = await window.fetch("/api/auth/me", { cache: "no-store" });
+        const response = await window.fetch("/api/auth/me", {
+          cache: "no-store",
+        });
         const me = await response.json();
-        if (!me.logged_in || !["admin", "developer", "super_admin"].includes(me.role)) {
+        if (!me.logged_in || !["admin", "developer"].includes(me.role)) {
           window.location.replace(me.logged_in ? "/demo" : "/login");
         }
       } catch (error) {

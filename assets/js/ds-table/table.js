@@ -24,7 +24,7 @@ function shortId(sid) {
   return sid.length > 14 ? sid.slice(0, 14) + "…" : sid;
 }
 
-  async function loadData() {
+async function loadData() {
   const limit = $("limit-select").value;
   try {
     const res = await fetch(`/api/admin/alerts?limit=${limit}`);
@@ -51,7 +51,9 @@ function shortId(sid) {
 
     const alerts = data.recent_alerts || [];
     $("stat-total-db").textContent = alerts.length;
-    const config = await fetch("/api/config").then((response) => response.json());
+    const config = await fetch("/api/config").then((response) =>
+      response.json(),
+    );
     $("stat-retention").textContent = `${config.ALERT_RETENTION_DAYS} 天`;
     $("stat-max-records").textContent = config.ALERT_MAX_DB_RECORDS;
     const tbody = $("alert-tbody");
@@ -86,7 +88,7 @@ function shortId(sid) {
 $("limit-select").addEventListener("change", loadData);
 
 $("btn-reset").addEventListener("click", async () => {
-  if (!confirm("確定要重置警報視窗計數？\n（資料庫紀錄不會刪除）")) return;
+  if (!confirm("確定要重置警告？ \n資料庫紀錄不會刪除 ")) return;
   const res = await fetch("/api/admin/alerts/reset", { method: "POST" });
   if (res.status === 401) {
     window.location.href = "/login";

@@ -32,7 +32,7 @@
   }
 
   function getRoleBadge(role) {
-    if (role === "developer" || role === "super_admin") {
+    if (role === "developer" || role === "admin") {
       return '<span class="role-badge role-badge-developer">開發者</span>';
     }
     if (role === "admin") {
@@ -81,7 +81,7 @@
 
   // ===== 載入管理員清單 =====
   async function loadManagers() {
-    if (currentRole !== "developer" && currentRole !== "super_admin") return;
+    if (currentRole !== "developer" && currentRole !== "admin") return;
     try {
       const res = await fetch("/api/admin/managers");
       if (!res.ok) return;
@@ -95,7 +95,7 @@
         allManagers.forEach((m) => {
           const opt = document.createElement("option");
           opt.value = m.id;
-          opt.textContent = `${m.display_name || m.username} (${m.role === "developer" || m.role === "super_admin" ? "開發者" : "管理員"})`;
+          opt.textContent = `${m.display_name || m.username} (${m.role === "developer" || m.role === "admin" ? "開發者" : "管理員"})`;
           selectMgr.appendChild(opt);
         });
       }
@@ -107,7 +107,7 @@
         allManagers.forEach((m) => {
           const opt = document.createElement("option");
           opt.value = m.id;
-          opt.textContent = `${m.display_name || m.username} (${m.role === "developer" || m.role === "super_admin" ? "開發者" : "管理員"})`;
+          opt.textContent = `${m.display_name || m.username} (${m.role === "developer" || m.role === "admin" ? "開發者" : "管理員"})`;
           selectEditMgr.appendChild(opt);
         });
       }
@@ -119,8 +119,7 @@
     const groupRole = $("group-new-role");
     const groupManager = $("group-new-manager");
     const selectRole = $("select-new-role");
-    const isSuper =
-      currentRole === "developer" || currentRole === "super_admin";
+    const isSuper = currentRole === "developer" || currentRole === "admin";
 
     if (isSuper) {
       if (groupRole) groupRole.classList.remove("hidden");
@@ -147,8 +146,7 @@
     tbody.innerHTML = users
       .map((u) => {
         const isSelf = u.id === currentUserId;
-        const isSuper =
-          currentRole === "developer" || currentRole === "super_admin";
+        const isSuper = currentRole === "developer" || currentRole === "admin";
         const canEdit = isSuper
           ? true
           : u.role === "driver" && u.manager_id === currentUserId;
@@ -246,7 +244,7 @@
   function openDeleteModal(id, name) {
     if (!deleteModal || !deleteMessage) return;
     pendingDelete = { id, name };
-    deleteMessage.textContent = `確定要永久刪除帳號「${name}」(ID: ${id})？ \n 刪除後無法復原。`;
+    deleteMessage.innerHTML = `使用者名稱: ${name} <br> ID: ${id}`;
     deleteModal.classList.remove("hidden");
   }
 
@@ -285,7 +283,6 @@
         const roleLabel =
           {
             developer: "開發者",
-            super_admin: "總管理員",
             admin: "管理員",
             driver: "駕駛",
           }[u.role] ||
@@ -472,8 +469,7 @@
     }
 
     // 角色設定 (僅開發者/總管理員可變更角色與指派主管)
-    const isSuper =
-      currentRole === "developer" || currentRole === "super_admin";
+    const isSuper = currentRole === "developer" || currentRole === "admin";
     const groupRole = $("group-edit-role");
     const selectRole = $("select-edit-role");
     const groupMgr = $("group-edit-manager");
@@ -493,7 +489,7 @@
         allManagers.forEach((m) => {
           const opt = document.createElement("option");
           opt.value = m.id;
-          opt.textContent = `${m.display_name || m.username} (${m.role === "developer" || m.role === "super_admin" ? "開發者" : "管理員"})`;
+          opt.textContent = `${m.display_name || m.username} (${m.role === "developer" || m.role === "admin" ? "開發者" : "管理員"})`;
           selectMgr.appendChild(opt);
         });
         selectMgr.value = user.manager_id || "";
@@ -576,8 +572,7 @@
       const lineNotifyAll = $("chk-edit-line-all")
         ? $("chk-edit-line-all").checked
         : true;
-      const isSuper =
-        currentRole === "developer" || currentRole === "super_admin";
+      const isSuper = currentRole === "developer" || currentRole === "admin";
 
       const payload = {
         display_name: displayName,
