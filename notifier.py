@@ -120,26 +120,42 @@ def dispatch_fatigue_escalation_alert(
     # 2. Discord Webhook
     # ----------------------------------------------------
     try:
-        # 取得目標 Webhook (優先使用駕駛專屬，次選主管專屬，預設使用全域)
-        dc_webhook = (
-            getattr(driver, "discord_webhook", None)
-            or getattr(manager, "discord_webhook", None)
-            or get_default_discord_webhook()
-        )
-        if dc_webhook:
+        target_webhooks = set()
+        # 2.1 直屬主管 Webhook
+        if manager and getattr(manager, "discord_webhook", None):
+            target_webhooks.add(getattr(manager, "discord_webhook").strip())
+
+        # 2.2 管理員 (developer / admin) Webhook
+        if admins:
+            for sa in admins:
+                if getattr(sa, "discord_webhook", None):
+                    target_webhooks.add(getattr(sa, "discord_webhook").strip())
+
+        # 2.3 駕駛員專屬 Webhook
+        if driver and getattr(driver, "discord_webhook", None):
+            target_webhooks.add(getattr(driver, "discord_webhook").strip())
+
+        # 2.4 若個別皆未設定，則使用全域環境變數預設 Webhook
+        sys_dc = get_default_discord_webhook()
+        if sys_dc and not target_webhooks:
+            target_webhooks.add(sys_dc.strip())
+
+        if target_webhooks:
             results["discord"]["attempted"] = True
-            dc_res = send_discord_fatigue_alert(
-                driver_name=driver_name,
-                driver_username=driver_username,
-                reason=reason,
-                score=score,
-                window_count=window_count,
-                occurred_at=occurred_at,
-                webhook_url=dc_webhook,
-            )
-            results["discord"]["success"] = dc_res.get("success", False)
-            if not dc_res.get("success"):
-                results["discord"]["message"] = dc_res.get("message")
+            all_dc_ok = True
+            for wh in target_webhooks:
+                dc_res = send_discord_fatigue_alert(
+                    driver_name=driver_name,
+                    driver_username=driver_username,
+                    reason=reason,
+                    score=score,
+                    window_count=window_count,
+                    occurred_at=occurred_at,
+                    webhook_url=wh,
+                )
+                if not dc_res.get("success"):
+                    all_dc_ok = False
+            results["discord"]["success"] = all_dc_ok
         else:
             logger.debug("[Notifier] 未配置 Discord Webhook，跳過 Discord 派送")
 
@@ -151,28 +167,41 @@ def dispatch_fatigue_escalation_alert(
     # 3. Telegram Bot
     # ----------------------------------------------------
     try:
-        tg_chat_id = (
-            getattr(driver, "telegram_chat_id", None)
-            or getattr(manager, "telegram_chat_id", None)
-            or get_default_telegram_chat_id()
-        )
         tg_token = get_default_telegram_token()
+        target_chats = set()
 
-        if tg_chat_id and tg_token:
+        if manager and getattr(manager, "telegram_chat_id", None):
+            target_chats.add(getattr(manager, "telegram_chat_id").strip())
+
+        if admins:
+            for sa in admins:
+                if getattr(sa, "telegram_chat_id", None):
+                    target_chats.add(getattr(sa, "telegram_chat_id").strip())
+
+        if driver and getattr(driver, "telegram_chat_id", None):
+            target_chats.add(getattr(driver, "telegram_chat_id").strip())
+
+        sys_tg_chat = get_default_telegram_chat_id()
+        if sys_tg_chat and not target_chats:
+            target_chats.add(sys_tg_chat.strip())
+
+        if target_chats and tg_token:
             results["telegram"]["attempted"] = True
-            tg_res = send_telegram_fatigue_alert(
-                driver_name=driver_name,
-                driver_username=driver_username,
-                reason=reason,
-                score=score,
-                window_count=window_count,
-                occurred_at=occurred_at,
-                chat_id=tg_chat_id,
-                bot_token=tg_token,
-            )
-            results["telegram"]["success"] = tg_res.get("success", False)
-            if not tg_res.get("success"):
-                results["telegram"]["message"] = tg_res.get("message")
+            all_tg_ok = True
+            for chat in target_chats:
+                tg_res = send_telegram_fatigue_alert(
+                    driver_name=driver_name,
+                    driver_username=driver_username,
+                    reason=reason,
+                    score=score,
+                    window_count=window_count,
+                    occurred_at=occurred_at,
+                    chat_id=chat,
+                    bot_token=tg_token,
+                )
+                if not tg_res.get("success"):
+                    all_tg_ok = False
+            results["telegram"]["success"] = all_tg_ok
         else:
             logger.debug("[Notifier] 未配置 Telegram Bot 或 Chat ID，跳過 Telegram 派送")
 
