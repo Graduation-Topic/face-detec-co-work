@@ -559,16 +559,8 @@ def update_state():
 
 @app.route("/api/state/reset", methods=["POST"])
 def reset_state():
-    """司機端重置畫面數據；僅管理員身分才同步清除後台警報與冷卻計時"""
-    identity = _get_identity()
-    user_uuid = identity.get("user_id") if identity else None
-    role = identity.get("role") if identity else "driver"
-
+    """司機端：僅重置當前畫面的即時特徵與圖表數據，絕不干預後端警報累積與通報"""
     state.reset_metrics()
-    # 司機無法擅自解除後台警報，僅有管理員身分才能重置後端通報狀態
-    if role in ("admin", "developer"):
-        get_user_alert_manager(user_uuid).reset()
-
     return jsonify(state.snapshot())
 
 
